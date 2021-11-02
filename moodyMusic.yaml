@@ -1,0 +1,304 @@
+openapi: 3.0.0
+info:
+  version: "1.0.0"
+  title: "Moody Music"
+  description: "API du projet integre du semestre 3"
+servers:
+  - url: "localhost:3000"
+paths:
+  /login:
+    post:
+      summary: Logs in and returns the authentication cookie
+      requestBody:
+        required: true
+        description: A JSON object containing the login and password.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: JohnDoe
+                password:
+                  type: string
+                  example: 1234password5678
+      responses:
+        "200":
+          description: Successfully authenticated. The session ID is returned in a cookie named `JSESSIONID`. You need to include this cookie in subsequent requests.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: JSESSIONID=abcde12345; Path=/; HttpOnly
+        "403":
+          description: wrong username and/or password.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: a message that specifies the error that occured (wrong username and/or password.)
+                    example: wrong username and/or password.
+  /username:
+    get:
+      summary: check is username is valid for use in a new account
+      parameters:
+        - in: query
+          name: username
+          required: true
+          example: johndoe2
+          schema:
+            type: string
+          description: new username to validate
+      responses:
+        "200":
+          description: username is either valid (isn't bound to another account yet) or not valid (already bound to another account)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                    description: true if username is valid, false otherwise
+                    example: true
+  /register:
+    post:
+      summary: Registers the new user, logs him in and returns the authentication cookie
+      requestBody:
+        required: true
+        description: A JSON object containing the login, password, and email adress.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: JohnDoe
+                password:
+                  type: string
+                  example: 1234password5678
+      responses:
+        "200":
+          description: Successfully authenticated. The session ID is returned in a cookie named `JSESSIONID`. You need to include this cookie in subsequent requests.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: JSESSIONID=abcde12345; Path=/; HttpOnly
+        "422":
+          description: Invalid username (already bound to another account)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: error message that specifies the error that occurred (invalid username)
+                    example: invalid username (already bound to another account)
+  /user:
+    get:
+      security:
+        - cookieAuth: []
+      summary: get user informations.
+      parameters:
+        - in: query
+          name: username
+          required: true
+          example: johndoe
+          schema:
+            type: string
+          description: the username of the current user
+      responses:
+        "200":
+          description: the specified username is valid and user info is sent in the response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+                    example: JohnDoe
+                    description: the username of the current user
+                  upvote_history:
+                    type: array
+                    description: history of recently upvoted playlists
+                    example:
+                      - https://open.spotify.com/embed/playlist/1DFixLWuPkv3KT3TnV35m3
+                      - https://open.spotify.com/embed/playlist/1DFixLWfPkv3KT3TnV69l6
+                  preferred_music_genre:
+                    type: string
+                    example: hip hop
+                    description: the preferred music genre of the current user according to upvoted playlists
+        "403":
+          description: invalid authorization cookie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: a message that specifies the error that occured (invalid authorization cookie)
+                    example: invalid authorization cookie
+  /mood:
+    put:
+      summary: Receives an image as a parameter and returns the mood of the person in it
+      requestBody:
+        description: Take an image using the device's camera and send it in the body of the request in a binary string format
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  example: 01100001 01100010 01100011 01100011
+      responses:
+        "200":
+          description: an initial face detection algorithm has detected a face in the image and passed it to the mood detection algorithm which detected its corresponding mood
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mood:
+                    type: string
+                    description: the detected mood of the person's detected face
+                    example: happy
+        "500":
+          description: no face was detected in the image.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: a message that specifies the error that occured (image doesn't contain any face)
+                    example: the image doesn't contain any face
+  /music:
+    get:
+      summary: Receives the detected mood as a string and responds with an array of spotify playlist urls.
+      parameters:
+        - in: query
+          name: mood
+          required: true
+          example: happy
+          schema:
+            type: string
+          description: the detected mood of the person's detected face
+        - in: query
+          name: number
+          required: true
+          example: 1
+          schema:
+            type: integer
+          description: The numbers of items to return
+      responses:
+        "200":
+          description: the specified mood has been recognized correctly and is linked to a number of playlists in the database.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  playlists:
+                    description: an array containing recommended playlists based on the specified mood
+                    type: array
+                    items:
+                      type: object
+                      description: the music object that contains information about each recommended playlist
+                      properties:
+                        uri:
+                          type: string
+                          description: the uri that identifies the playlist. Must be passed to a url formatter before inserting into embed.
+                          example: https://open.spotify.com/embed/playlist/1DFixLWuPkv3KT3TnV35m3
+                        rank:
+                          type: integer
+                          description: rank of the suggestion, based on the past upvotes and downvotes, and a random component
+                          example: 1
+                        genre:
+                          type: string
+                          description: genre of the playlist
+                          example: hip hop
+        "404":
+          description: the specified mood has not been recognized correctly
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: a message that specifies the error that occured
+                    example: unkown mood
+  /vote:
+    post:
+      security:
+        - cookieAuth: []
+      summary: Receives a vote from the user regarding a specific playlist
+      requestBody:
+        description: upvote or downvote (using a boolean flag) the music suggestion defined by its url
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                uri:
+                  type: string
+                  example: https://open.spotify.com/embed/playlist/1DFixLWuPkv3KT3TnV35m3
+                vote:
+                  description: "the vote as a boolean value: true for an upvote and false otherwise"
+                  type: boolean
+                  example: true
+      responses:
+        "200":
+          description: the normal response of this request; means that the operation was done succesfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  state:
+                    type: string
+                    description: optionnal succes message
+                    example: https://open.spotify.com/embed/playlist/1DFixLWuPkv3KT3TnV35m3 upvoted successfully
+        "404":
+          description: specified uri not found in database
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: a message that specifies the error that occured (invalid uri)
+                    example: invalide uri
+        "403":
+          description: invalid authorization cookie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: a message that specifies the error that occured (invalid authorization cookie)
+                    example: invalid authorization cookie
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
