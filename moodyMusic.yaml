@@ -241,6 +241,64 @@ paths:
                     type: string
                     description: a message that specifies the error that occured
                     example: unkown mood
+    post:
+      security:
+        - cookieAuth: []
+      summary: Receives a new playlist uri that a specific user wants to add to his personnalized suggestions
+      requestBody:
+        description: contains uri and associated mood to the newly added playlist
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                uri:
+                  type: string
+                  description: uri of the playlist to add
+                  example: https://open.spotify.com/embed/playlist/1DFixLWuPkv3KT3TnV35m3
+                title:
+                  type: string
+                  description: title to associate with the playlist
+                  example: lofi hip hop music
+                mood:
+                  type: string
+                  description: mood associated to the playlist to add
+                  example: neutral
+      responses:
+        "200":
+          description: the normal response for this request; means that the playlist was added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  state:
+                    type: string
+                    description: optionnal succes message
+                    example: https://open.spotify.com/embed/playlist/1DFixLWuPkv3KT3TnV35m3 added successfully with title lofi hip hop music and mood happy
+        "409":
+          description: uri already exists in the database
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: a message that specifies the error that occured (uri already exists in the database)
+                    example: uri already exists in the database
+        "403":
+          description: invalid authorization cookie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: a message that specifies the error that occured (invalid authorization cookie)
+                    example: invalid authorization cookie
   /vote:
     post:
       security:

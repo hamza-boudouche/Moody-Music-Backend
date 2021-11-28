@@ -1,0 +1,41 @@
+base de données:
+	type: sql (postgres?)
+	tables:
+		playlists:
+			id: integer
+			uri: string
+			titre: string
+			genre: string	
+			mood: string
+			primary key (id)
+			foreign key (genre) references genres(genre)
+			foreign key (mood) references moods(mood)
+		genres:
+			genre: string
+			primary key (genre)
+		moods:
+			mood: string
+			primary key (mood)
+		users:
+			id: integer
+			username: string
+			email: string
+			preferred_music_genre: string
+			hashed_password: string
+			primary key (id)
+			foreign key (preferred_music_genre) references genres(genre)
+		playlists_scores:
+			username: string
+			mood: string
+			uri: string
+			score: integer
+			primary key (username, uri)
+			foreign key (usename) references users(username)
+			foreign key (uri) references playlists(uri)
+			foreign key (mood) references moods(mood)
+librairies:
+	sqlalchemy: db orm
+	psycopg2: db driver
+	pipenv: manages dependencies
+	flask: api
+	pyjwt: json web token
