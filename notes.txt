@@ -39,3 +39,20 @@ librairies:
 	pipenv: manages dependencies
 	flask: api
 	pyjwt: json web token
+
+(testing the database)
+#start
+from app import db
+from app.models import Genre, Mood, User, Playlist, Score
+
+m = Mood(id=1, title='hiphop', description='...')
+print(m)
+g = Genre(id=1, title='chill', description='...')
+print(g)
+u = User(id=1, username='hamza', email='...', passwordHash='...', genre=g, commonMood=m)
+print(u)
+p = Playlist(id=1, uri='/spotify.com/', title='lofi', genre=g, mood=m)
+print(p)
+s = Score(user=u, playlist=p, score=2, mood=m)
+print(s)
+#end
