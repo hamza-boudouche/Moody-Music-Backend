@@ -1,7 +1,7 @@
 from flask import Flask
 from config import Config
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate	
+from flask_migrate import Migrate
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -15,6 +15,6 @@ from app.music import bp as music_bp
 app.register_blueprint(music_bp, url_prefix='/music')
 
 from app.moodrec import bp as moodrec_bp
-app.register_blueprint(moodrec_bp)
+app.register_blueprint(moodrec_bp, url_prefix='/mood')
 
 from app import models
