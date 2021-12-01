@@ -1,11 +1,8 @@
 from app.users import bp
-from markupsafe import escape
-from flask import request, jsonify, set_cookie, make_response
+from flask import request, jsonify, make_response, asc
 from app.models import User, Genre, Mood
-from app.utils import crypto, auth, DEFAULT_MOOD, DEFAULT_GENRE, COOKIE_NAME
-from datetime import datetime
+from app.utils import crypto, auth, DEFAULT_MOOD, DEFAULT_GENRE, COOKIE_NAME, BLACKLISTED, DEFAULT_COUNT
 from app import db
-import json
 
 @bp.route('/<username>', methods=['GET'])
 def getUser(username: str):
@@ -14,6 +11,19 @@ def getUser(username: str):
 	if user is None:
 		return {'success': False, 'message': 'invalid username'}, 404
 	return user
+
+@bp.route('/multiple/', methods=['GET'])
+def getUsers():
+	# implement having multiple pages of users of length `count`
+	# count is specified as a query parameter
+	# pages are implemented using an `offset` variable that defaults to 0
+	start = request.args.get('start') or 0
+	count = request.args.get('count') or DEFAULT_COUNT
+	users = User.query.order_by(asc(User.id)).offset(start).limit(count).all()
+	res = []
+	for user in users:
+		res.append(user.toDict())
+	return {'success': True, 'users': res}
 
 @bp.route('/check/<username>', methods=['GET'])
 def checkUsername(username: str):
@@ -53,10 +63,70 @@ def register():
 	defaultMood = Mood.query.filter_by(title=DEFAULT_MOOD).first()
 	newUser = User(username=content.get('username'), email=content.get('email'), passwordHash=passwordHash, genre=defaultGenre, commonMood=defaultMood)
 
-# TODO: add update and delete methods and endpoints
+@bp.route('/update', methods=['PUT'])
+def update():
+	# checking auth cookie 
+	token = request.cookies.get(COOKIE_NAME)
+	if not auth.verify_blacklist(token):
+		return {'success': False, 'message': 'invalid authorization cookie'}, 403
+	user = auth.verify_token(token)
+	if user is None:
+		return {'success': False, 'message': 'invalid authorization cookie'}, 403
+	# processing request
+	content = request.get_json()
+	if content.get('username') is None:
+		return {'success': False, 'message': 'missing username'}, 422
+	if content.get('username') != user.username:
+		# unauthorized operation
+		return {'success': False, 'message': 'invalid authorization cookie'}, 403
+	user = User.query.filter_by(username=content['username']).first()
+	if user is None:
+		return {'success': False, 'message': 'account not found'}, 404
+	exceptions = ['username', 'passwordHash', 'preferredGenreid', 'commonMoodid', 'genre', 'commonMood']
+	for key in content:
+		if key not in exceptions and hasattr(user, key):
+			setattr(user, key, content.get(key))
+	db.session.commit()
+	return {'success': True, 'message': 'update successful'}
 
-@bp.route('/logout', methods=['POST'])
+@bp.route('/delete', methods=['DELETE'])
+def delete():
+	token = request.cookies.get(COOKIE_NAME)
+	if not auth.verify_blacklist(token):
+		return {'success': False, 'message': 'invalid authorization cookie'}, 403
+	user = auth.verify_token(token)
+	if user is None:
+		return {'success': False, 'message': 'invalid authorization cookie'}, 403
+	content = request.get_json()
+	if content.get('username') is None:
+		return {'success': False, 'message': 'missing username'}, 422
+	if content.get('username') != user.username:
+		# unauthorized operation
+		return {'success': False, 'message': 'invalid authorization cookie'}, 403
+	user = User.query.filter_by(username=content['username']).first()
+	if user is None:
+		return {'success': False, 'message': 'account not found'}, 404
+	db.session.delete(user)
+	db.session.commit()
+	auth.blacklist_token(token)
+	return {'success': True, 'message': 'user deleted successfully'}
+
+@bp.route('/logout', methods=['PUT'])
 def logout():
-	# FIXME: check cookie auth
-	# TODO: use redis cash to blacklist tokens
-	pass
+	token = request.cookies.get(COOKIE_NAME)
+	if not auth.verify_blacklist(token):
+		return {'success': False, 'message': 'invalid authorization cookie'}, 403
+	user = auth.verify_token(token)
+	if user is None:
+		return {'success': False, 'message': 'invalid authorization cookie'}, 403
+	content = request.get_json()
+	if content.get('username') is None:
+		return {'success': False, 'message': 'missing username'}, 422
+	if content.get('username') != user.username:
+		# unauthorized operation
+		return {'success': False, 'message': 'invalid authorization cookie'}, 403
+	# blacklisting token
+	auth.blacklist_token(token)
+	response = make_response(jsonify({'success': True, 'message': 'token invalidated'}))
+	response.set_cookie(COOKIE_NAME, '', expires=0)
+	return response

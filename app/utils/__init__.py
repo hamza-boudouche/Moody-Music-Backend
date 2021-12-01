@@ -4,3 +4,5 @@ from app.utils import auth
 DEFAULT_GENRE = "happy"
 DEFAULT_MOOD = "happy"
 COOKIE_NAME = "moodymusiclogin"
+BLACKLISTED = "blacklisted"
+DEFAULT_COUNT = 10

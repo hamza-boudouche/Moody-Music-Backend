@@ -3,6 +3,8 @@ from dotenv import load_dotenv, find_dotenv
 from jwt import encode, decode
 from datetime import datetime
 import json
+from app import cache
+from app.utils import BLACKLISTED
 
 def generate_token(user):
 	load_dotenv(find_dotenv())
@@ -17,3 +19,9 @@ def verify_token(token):
 		return {'username': user.get('username'), 'email': user.get('email'), 'preferredGenre': user.get('preferredGenre'), 'commonMood': user.get('commonMood')}
 	except:
 		return None
+
+def verify_blacklist(token):
+	return cache.get(token) != BLACKLISTED
+
+def blacklist_token(token):
+	cache.set(token, BLACKLISTED)
