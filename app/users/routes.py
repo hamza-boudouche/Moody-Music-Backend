@@ -1,13 +1,17 @@
 from app.users import bp
-from flask import request, jsonify, make_response, asc
+from flask import request, jsonify, make_response
+from sqlalchemy import asc
 from app.models import User, Genre, Mood
-from app.utils import crypto, auth, DEFAULT_MOOD, DEFAULT_GENRE, COOKIE_NAME, BLACKLISTED, DEFAULT_COUNT
+from app.utils import crypto, auth, DEFAULT_MOOD, DEFAULT_GENRE, COOKIE_NAME, DEFAULT_COUNT
 from app import db
 
 @bp.route('/<username>', methods=['GET'])
 def getUser(username: str):
-	token = request.cookies.get(COOKIE_NAME)
-	user = auth.verify_token(token)
+	# FIXME: add number of upvotes, number of downvotes, number of personnal playlists (links to personnel playlists)
+	# FIXME: add history of recently iupvoted playlists
+	# added to api documentation
+	tokenString = request.cookies.get(COOKIE_NAME)
+	user = auth.Token.verify(tokenString)
 	if user is None:
 		return {'success': False, 'message': 'invalid username'}, 404
 	return user
@@ -17,6 +21,7 @@ def getUsers():
 	# implement having multiple pages of users of length `count`
 	# count is specified as a query parameter
 	# pages are implemented using an `offset` variable that defaults to 0
+	# FIXME: for each user, add number of upvotes, number of downvotes, number of personnal playlists (links to personnel playlists) 
 	start = request.args.get('start') or 0
 	count = request.args.get('count') or DEFAULT_COUNT
 	users = User.query.order_by(asc(User.id)).offset(start).limit(count).all()
@@ -27,6 +32,8 @@ def getUsers():
 
 @bp.route('/check/<username>', methods=['GET'])
 def checkUsername(username: str):
+	# TODO: if not valid add existing user info
+	# added to api documentation
 	users = User.query.filter_by(username=username).all()
 	if len(users) != 0:
 		return {"valid": False}
@@ -34,6 +41,8 @@ def checkUsername(username: str):
 
 @bp.route('/login', methods=['POST'])
 def login():
+	# TODO: return link to profil photo
+	# added to api documentation
 	content = request.get_json()
 	if(content.get('username') is None or content.get('password') is None):
 		# return a 422 response : missing username or password
@@ -44,14 +53,15 @@ def login():
 	if not crypto.check_password(content.get('password'), user.passwordHash):
 		return {'success': False, 'message': 'wrong username and/or password'}, 403
 	# else: the user is connected successfully, send auth cookie
-	token = auth.generate_token(user)
+	token = auth.Token(user)
 	response = make_response(jsonify({'success': True, 'message': 'authenticated successfully', 'username': content.get('username')}))
-	response.set_cookie(COOKIE_NAME, value = token, max_age = 604800, httponly = True)
+	response.set_cookie(COOKIE_NAME, value = token.tokenString, max_age = 604800, httponly = True)
 	return response
 
 @bp.route('/register', methods=['POST'])
 def register():
 	# FIXME: check if email is valid (regex and email verification)
+	# added to api documentation
 	content = request.get_json()
 	if content.get('username') is None or content.get('password') is None or content.get('email') is None:
 		return {'success': False, 'message': 'missing username, password and/or email'}, 422
@@ -62,14 +72,18 @@ def register():
 	defaultGenre = Genre.query.filter_by(title=DEFAULT_GENRE).first()
 	defaultMood = Mood.query.filter_by(title=DEFAULT_MOOD).first()
 	newUser = User(username=content.get('username'), email=content.get('email'), passwordHash=passwordHash, genre=defaultGenre, commonMood=defaultMood)
+	db.session.add(newUser)
+	db.commit()
+	return {'success': True, 'message': f'added user {newUser.username} successfully'}
 
 @bp.route('/update', methods=['PUT'])
 def update():
 	# checking auth cookie 
-	token = request.cookies.get(COOKIE_NAME)
-	if not auth.verify_blacklist(token):
+	# added to api documentation
+	tokenString = request.cookies.get(COOKIE_NAME)
+	if not auth.Token.verify_blacklist(tokenString):
 		return {'success': False, 'message': 'invalid authorization cookie'}, 403
-	user = auth.verify_token(token)
+	user = auth.Token.verify(tokenString)
 	if user is None:
 		return {'success': False, 'message': 'invalid authorization cookie'}, 403
 	# processing request
@@ -82,6 +96,7 @@ def update():
 	user = User.query.filter_by(username=content['username']).first()
 	if user is None:
 		return {'success': False, 'message': 'account not found'}, 404
+	#FIXME: add new properties to exceptions
 	exceptions = ['username', 'passwordHash', 'preferredGenreid', 'commonMoodid', 'genre', 'commonMood']
 	for key in content:
 		if key not in exceptions and hasattr(user, key):
@@ -91,10 +106,11 @@ def update():
 
 @bp.route('/delete', methods=['DELETE'])
 def delete():
-	token = request.cookies.get(COOKIE_NAME)
-	if not auth.verify_blacklist(token):
+	# added to api documentation
+	tokenString = request.cookies.get(COOKIE_NAME)
+	if not auth.Token.verify_blacklist(tokenString):
 		return {'success': False, 'message': 'invalid authorization cookie'}, 403
-	user = auth.verify_token(token)
+	user = auth.Token.verify(tokenString)
 	if user is None:
 		return {'success': False, 'message': 'invalid authorization cookie'}, 403
 	content = request.get_json()
@@ -108,15 +124,16 @@ def delete():
 		return {'success': False, 'message': 'account not found'}, 404
 	db.session.delete(user)
 	db.session.commit()
-	auth.blacklist_token(token)
-	return {'success': True, 'message': 'user deleted successfully'}
+	auth.Token.blacklist(tokenString)
+	return {'success': True, 'message': f'user {user.username} deleted successfully'}
 
 @bp.route('/logout', methods=['PUT'])
 def logout():
-	token = request.cookies.get(COOKIE_NAME)
-	if not auth.verify_blacklist(token):
+	# added to api documentation
+	tokenString = request.cookies.get(COOKIE_NAME)
+	if not auth.Token.verify_blacklist(tokenString):
 		return {'success': False, 'message': 'invalid authorization cookie'}, 403
-	user = auth.verify_token(token)
+	user = auth.Token.verify(tokenString)
 	if user is None:
 		return {'success': False, 'message': 'invalid authorization cookie'}, 403
 	content = request.get_json()
@@ -126,7 +143,7 @@ def logout():
 		# unauthorized operation
 		return {'success': False, 'message': 'invalid authorization cookie'}, 403
 	# blacklisting token
-	auth.blacklist_token(token)
+	auth.Token.blacklist(tokenString)
 	response = make_response(jsonify({'success': True, 'message': 'token invalidated'}))
-	response.set_cookie(COOKIE_NAME, '', expires=0)
+	response.set_cookie(COOKIE_NAME, '', expires=0, httponly = True)
 	return response

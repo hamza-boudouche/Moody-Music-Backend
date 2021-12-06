@@ -5,23 +5,27 @@ from datetime import datetime
 import json
 from app import cache
 from app.utils import BLACKLISTED
+from app.models import User
 
-def generate_token(user):
-	load_dotenv(find_dotenv())
-	secret = os.environ.get("SECRET")
-	return encode({'id': user.id, 'username': user.username, 'email': user.email, 'preferredGenre': user.genre, 'commonMood': user.mood, 'timestamp': datetime.now()}, secret, algorithm="HS256")
+class Token:
+	def __init__(self, user: User):
+		load_dotenv(find_dotenv())
+		self.tokenString = encode({'id': user.id, 'username': user.username, 'email': user.email, 'preferredGenre': user.genre, 'commonMood': user.mood, 'timestamp': datetime.now()}, os.environ.get("SECRET"), algorithm="HS256")
 
-def verify_token(token):
-	load_dotenv(find_dotenv())
-	secret = os.environ.get("SECRET")
-	try:
-		user = json.loads(json.dumps(decode(token, secret, algorithms=["HS256"])))
-		return {'username': user.get('username'), 'email': user.get('email'), 'preferredGenre': user.get('preferredGenre'), 'commonMood': user.get('commonMood')}
-	except:
-		return None
+	@staticmethod
+	def verify(tokenString: str) -> dict:
+		load_dotenv(find_dotenv())
+		secret = os.environ.get("SECRET")
+		try:
+			user = json.loads(json.dumps(decode(tokenString, secret, algorithms=["HS256"])))
+			return {'username': user.get('username'), 'email': user.get('email'), 'preferredGenre': user.get('preferredGenre'), 'commonMood': user.get('commonMood')}
+		except:
+			return None
 
-def verify_blacklist(token):
-	return cache.get(token) != BLACKLISTED
+	@staticmethod
+	def verify_blacklist(tokenString: str):
+		return cache.get(tokenString) != BLACKLISTED
 
-def blacklist_token(token):
-	cache.set(token, BLACKLISTED)
+	@staticmethod
+	def blacklist(tokenString: str) -> None:
+		cache.set(tokenString, BLACKLISTED)

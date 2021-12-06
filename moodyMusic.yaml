@@ -4,14 +4,14 @@ info:
   title: "Moody Music"
   description: "API du projet integre du semestre 3"
 servers:
-  - url: "localhost:3000"
+  - url: "localhost:5000"
 paths:
-  /login:
+  /user/login:
     post:
-      summary: Logs in and returns the authentication cookie
+      summary: Logs in, sets the authentication cookie, and returns the username of the account.
       requestBody:
         required: true
-        description: A JSON object containing the login and password.
+        description: A JSON object containing the username and password.
         content:
           application/json:
             schema:
@@ -30,7 +30,7 @@ paths:
             Set-Cookie:
               schema:
                 type: string
-                example: JSESSIONID=abcde12345; Path=/; HttpOnly
+                example: moodymusiclogin=abcde12345; Path=/; HttpOnly
         "403":
           description: wrong username and/or password.
           content:
@@ -38,11 +38,30 @@ paths:
               schema:
                 type: object
                 properties:
-                  error:
+                  success:
+                    type: boolean
+                    description: a boolean flag specifying if the operation succeded of not
+                    example: true
+                  message:
                     type: string
                     description: a message that specifies the error that occured (wrong username and/or password.)
                     example: wrong username and/or password.
-  /username:
+        "422":
+          description: missing username and/or password.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag specifying if the operation succeded of not
+                    example: true
+                  message:
+                    type: string
+                    description: a message that specifies the error that occured (missing username and/or password.)
+                    example: missing username and/or password.
+  /user/check/:
     get:
       summary: check is username is valid for use in a new account
       parameters:
@@ -65,7 +84,7 @@ paths:
                     type: boolean
                     description: true if username is valid, false otherwise
                     example: true
-  /register:
+  /user/register:
     post:
       summary: Registers the new user, logs him in and returns the authentication cookie
       requestBody:
@@ -82,25 +101,40 @@ paths:
                 password:
                   type: string
                   example: 1234password5678
+                email:
+                  type: string
+                  example: johndoe@example.com
       responses:
         "200":
-          description: Successfully authenticated. The session ID is returned in a cookie named `JSESSIONID`. You need to include this cookie in subsequent requests.
-          headers:
-            Set-Cookie:
-              schema:
-                type: string
-                example: JSESSIONID=abcde12345; Path=/; HttpOnly
-        "422":
-          description: Invalid username (already bound to another account)
+          description: Successfully added user.
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  error:
+                  success:
+                    type: boolean
+                    description: a boolean flag specifying if the operation succeded of not
+                    example: true
+                  message:
                     type: string
-                    description: error message that specifies the error that occurred (invalid username)
-                    example: invalid username (already bound to another account)
+                    description: a message that describes the operation.
+                    example: added user johnDoe successfully
+        "422":
+          description: Invalid username (already bound to another account) or missing username and/or password.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag specifying if the operation succeded of not
+                    example: false
+                  message:
+                    type: string
+                    description: a message that specifies the error that occured (missing username and/or password. or username already bound to another account)
+                    example: missing username and/or password.
   /user:
     get:
       security:
@@ -125,8 +159,12 @@ paths:
                   username:
                     type: string
                     example: JohnDoe
-                    description: the username of the current user
-                  upvote_history:
+                    description: the username of the requested user
+                  email:
+                    type: string
+                    example: JohnDoe@example.com
+                    description: the email of the requested user
+                  upvoteHistory:
                     type: array
                     description: history of recently upvoted playlists
                     example:
@@ -136,6 +174,195 @@ paths:
                     type: string
                     example: hip hop
                     description: the preferred music genre of the current user according to upvoted playlists
+                  numberOfUpvotedPlaylists:
+                    type: integer
+                    example: 5
+                    description: the number of upvotes
+                  numberOfDownvotedPlaylists:
+                    type: integer
+                    example: 2
+                    description: the number of downvotes
+                  personnalPlaylists:
+                    type: array
+                    description: list of personnal playlists (added by this user)
+                    example:
+                      - https://open.spotify.com/embed/playlist/1DFixLWuPkv3KT3TnV35m3
+                      - https://open.spotify.com/embed/playlist/1DFixLWfPkv3KT3TnV69l6
+        "404":
+          description: invalid username
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag specifying if the operation succeded of not
+                    example: false
+                  message:
+                    type: string
+                    description: a message that specifies the error that occured (invalid username)
+                    example: missing username and/or password.
+  /user/multiple:
+    get:
+      summary: get multipls users, along with their associated informations.
+      parameters:
+        - in: query
+          name: start
+          required: true
+          example: 5
+          schema:
+            type: integer
+          description: the offset of users selection
+        - in: query
+          name: count
+          required: true
+          example: 10
+          schema:
+            type: string
+          description: the size of the returned array of users
+      responses:
+        "200":
+          description: the requested list of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag specifying if the operation succeded or not
+                    example: true
+                  users:
+                    type: array
+                    items:
+                      properties:
+                        username:
+                          type: string
+                          example: JohnDoe
+                          description: the username of the requested user
+                        email:
+                          type: string
+                          example: JohnDoe@example.com
+                          description: the email of the requested user
+                        upvoteHistory:
+                          type: array
+                          description: history of recently upvoted playlists
+                          example:
+                            - https://open.spotify.com/embed/playlist/1DFixLWuPkv3KT3TnV35m3
+                            - https://open.spotify.com/embed/playlist/1DFixLWfPkv3KT3TnV69l6
+                        preferred_music_genre:
+                          type: string
+                          example: hip hop
+                          description: the preferred music genre of the current user according to upvoted playlists
+                        numberOfUpvotedPlaylists:
+                          type: integer
+                          example: 5
+                          description: the number of upvotes
+                        numberOfDownvotedPlaylists:
+                          type: integer
+                          example: 2
+                          description: the number of downvotes
+                        personnalPlaylists:
+                          type: array
+                          description: list of personnal playlists (added by this user)
+                          example:
+                            - https://open.spotify.com/embed/playlist/1DFixLWuPkv3KT3TnV35m3
+                            - https://open.spotify.com/embed/playlist/1DFixLWfPkv3KT3TnV69l6
+  /user/update:
+    put:
+      security:
+        - cookieAuth: []
+      summary: get user informations.
+      requestBody:
+        description: new user informations.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: new user email
+                  example: newemailjohndoe@example.com
+      responses:
+        "200":
+          description: the specified username is valid and user info is updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag specifying if the operation succeded or not
+                    example: true
+        "403":
+          description: invalid authorization cookie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag specifying if the operation succeded or not
+                    example: false
+                  message:
+                    type: string
+                    description: a message describing the error that occurred
+                    example: invalid authentication cookie
+        "404":
+          description: invalid account username
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag indicating whether or not the operation succeeded
+                  message:
+                    type: string
+                    description: a message that specifies the error that occured (invalid account name)
+                    example: account not found
+        "422":
+          description: missing parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag indicating whether or not the operation succeeded or not
+                    example: false
+                  error:
+                    type: string
+                    description: a message that specifies the error that occured
+                    example: missing username
+  /user/delete:
+    delete:
+      security:
+        - cookieAuth: []
+      summary: delete connected user
+      responses:
+        "200":
+          description: the user account is deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag specifying if the operation succeded or not
+                    example: true
+                  message:
+                    type: string
+                    description: a message describing the result of the operation
+                    example: user johnDoe deleted successfully
         "403":
           description: invalid authorization cookie
           content:
@@ -147,7 +374,90 @@ paths:
                     type: string
                     description: a message that specifies the error that occured (invalid authorization cookie)
                     example: invalid authorization cookie
-  /mood:
+        "422":
+          description: missing parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag indicating whether or not the operation succeeded or not
+                    example: false
+                  error:
+                    type: string
+                    description: a message that specifies the error that occured
+                    example: missing username
+        "404":
+          description: account not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag indicating whether or not the operation succeeded or not
+                    example: false
+                  error:
+                    type: string
+                    description: a message that specifies the error that occured
+                    example: account not found
+  /user/logout:
+    put:
+      security:
+        - cookieAuth: []
+      summary: get user informations.
+
+      responses:
+        "200":
+          description: token invalidated successfully
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: moodymusiclogin=; Path=/; HttpOnly
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag specifying if the operation succeded or not
+                    example: true
+                  message:
+                    type: string
+                    description: string describing the result of the operation
+                    example: token invalidated
+        "403":
+          description: invalid authorization cookie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: a message that specifies the error that occured (invalid authorization cookie)
+                    example: invalid authorization cookie
+        "422":
+          description: missing parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag indicating whether or not the operation succeeded or not
+                    example: false
+                  error:
+                    type: string
+                    description: a message that specifies the error that occured
+                    example: missing username
+  /mood/rec:
     put:
       summary: Receives an image as a parameter and returns the mood of the person in it
       requestBody:
@@ -185,111 +495,35 @@ paths:
                     type: string
                     description: a message that specifies the error that occured (image doesn't contain any face)
                     example: the image doesn't contain any face
-  /music:
-    get:
-      summary: Receives the detected mood as a string and responds with an array of spotify playlist urls.
-      parameters:
-        - in: query
-          name: mood
-          required: true
-          example: happy
-          schema:
-            type: string
-          description: the detected mood of the person's detected face
-        - in: query
-          name: number
-          required: true
-          example: 1
-          schema:
-            type: integer
-          description: The numbers of items to return
-      responses:
-        "200":
-          description: the specified mood has been recognized correctly and is linked to a number of playlists in the database.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  playlists:
-                    description: an array containing recommended playlists based on the specified mood
-                    type: array
-                    items:
-                      type: object
-                      description: the music object that contains information about each recommended playlist
-                      properties:
-                        uri:
-                          type: string
-                          description: the uri that identifies the playlist. Must be passed to a url formatter before inserting into embed.
-                          example: https://open.spotify.com/embed/playlist/1DFixLWuPkv3KT3TnV35m3
-                        rank:
-                          type: integer
-                          description: rank of the suggestion, based on the past upvotes and downvotes, and a random component
-                          example: 1
-                        genre:
-                          type: string
-                          description: genre of the playlist
-                          example: hip hop
-        "404":
-          description: the specified mood has not been recognized correctly
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    description: a message that specifies the error that occured
-                    example: unkown mood
-    post:
-      security:
-        - cookieAuth: []
-      summary: Receives a new playlist uri that a specific user wants to add to his personnalized suggestions
+  /mood/add:
+    put:
+      summary: Receives an image as a parameter and returns the mood of the person in it
       requestBody:
-        description: contains uri and associated mood to the newly added playlist
+        description: Take an image using the device's camera and send it in the body of the request in a binary string format
         required: true
         content:
           application/json:
             schema:
               type: object
               properties:
-                uri:
+                image:
                   type: string
-                  description: uri of the playlist to add
-                  example: https://open.spotify.com/embed/playlist/1DFixLWuPkv3KT3TnV35m3
-                title:
-                  type: string
-                  description: title to associate with the playlist
-                  example: lofi hip hop music
-                mood:
-                  type: string
-                  description: mood associated to the playlist to add
-                  example: neutral
+                  format: binary
+                  example: 01100001 01100010 01100011 01100011
       responses:
         "200":
-          description: the normal response for this request; means that the playlist was added successfully
+          description: an initial face detection algorithm has detected a face in the image and passed it to the mood detection algorithm which detected its corresponding mood
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  state:
+                  mood:
                     type: string
-                    description: optionnal succes message
-                    example: https://open.spotify.com/embed/playlist/1DFixLWuPkv3KT3TnV35m3 added successfully with title lofi hip hop music and mood happy
-        "409":
-          description: uri already exists in the database
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    description: a message that specifies the error that occured (uri already exists in the database)
-                    example: uri already exists in the database
-        "403":
-          description: invalid authorization cookie
+                    description: the detected mood of the person's detected face
+                    example: happy
+        "500":
+          description: no face was detected in the image.
           content:
             application/json:
               schema:
@@ -297,9 +531,9 @@ paths:
                 properties:
                   error:
                     type: string
-                    description: a message that specifies the error that occured (invalid authorization cookie)
-                    example: invalid authorization cookie
-  /vote:
+                    description: a message that specifies the error that occured (image doesn't contain any face)
+                    example: the image doesn't contain any face
+  /music/vote:
     post:
       security:
         - cookieAuth: []
@@ -316,9 +550,13 @@ paths:
                   type: string
                   example: https://open.spotify.com/embed/playlist/1DFixLWuPkv3KT3TnV35m3
                 vote:
-                  description: "the vote as a boolean value: true for an upvote and false otherwise"
-                  type: boolean
-                  example: true
+                  description: "the vote as a int value: 1 for an upvote and -1 for a downvote, and 0 to cancel and initialize"
+                  type: integer
+                  example: 1
+                mood:
+                  description: the mood of the user currently voting
+                  type: string
+                  example: happy
       responses:
         "200":
           description: the normal response of this request; means that the operation was done succesfully
@@ -353,6 +591,167 @@ paths:
                     type: string
                     description: a message that specifies the error that occured (invalid authorization cookie)
                     example: invalid authorization cookie
+  /music:
+    get:
+      security:
+        - cookieAuth: []
+      summary: receives a uri in the query and returns the corresponding playlist
+      parameters:
+        - in: query
+          name: mood
+          required: true
+          example: happy
+          schema:
+            type: string
+          description: the uri of the playlist
+      responses:
+        "200":
+          description: the playlist with the specified uri
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean value indicating whether or not the operation succeeded
+                    example: true
+                  title:
+                    type: string
+                    description: the title of the playlist
+                    example: lofi hip hop
+                  uri:
+                    type: string
+                    description: the uri of the playlist
+                    example: https://open.spotify.com/embed/playlist/1DFixLWuPkv3KT3TnV35m3
+                  upvoted:
+                    type: integer
+                    description: and integer flag that specifies whether the playlist is upvoted, downvoted, or wasn't affected by either of these actions.
+                    example: 1
+                  genre:
+                    type: string
+                    description: genre of the playlist
+                    example: hip hop
+                  mood:
+                    type: string
+                    description: the associated mood
+                    example: neutral
+        "404":
+          description: the specified uri is not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean value indicating whether or not the operation succeeded
+                    example: false
+                  message:
+                    type: string
+                    description: a message that specifies the error that occured
+                    example: uri not found
+  /music/add:
+    post:
+      security:
+        - cookieAuth: []
+      summary: Receives a new playlist uri that a specific user wants to add to his personnalized suggestions
+      requestBody:
+        description: contains uri and associated mood to the newly added playlist
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                uri:
+                  type: string
+                  description: uri of the playlist to add
+                  example: https://open.spotify.com/embed/playlist/1DFixLWuPkv3KT3TnV35m3
+                title:
+                  type: string
+                  description: title to associate with the playlist
+                  example: lofi hip hop music
+                mood:
+                  type: string
+                  description: mood associated to the playlist to add
+                  example: neutral
+                genre:
+                  type: string
+                  description: genre of the playlist to add
+                  example: hip hop
+      responses:
+        "200":
+          description: playlist added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean value indicating whether or not the operation succeeded
+                    example: true
+                  message:
+                    type: string
+                    description: optionnal succes message
+                    example: https://open.spotify.com/embed/playlist/1DFixLWuPkv3KT3TnV35m3 added successfully with title lofi hip hop music and mood happy
+        "409":
+          description: uri already exists in the database
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean value indicating whether or not the operation succeeded
+                    example: false
+                  message:
+                    type: string
+                    description: a message that specifies the error that occured
+                    example: uri already exists in the database
+        "403":
+          description: invalid authorization cookie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: a message that specifies the error that occured (invalid authorization cookie)
+                    example: invalid authorization cookie
+        "404":
+          description: specified genre and/or mood not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean value indicating whether or not the operation succeeded
+                    example: false
+                  message:
+                    type: string
+                    description: a message that specifies the error that occured
+                    example: genre not found
+        "422":
+          description: missing parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag indicating whether or not the operation succeeded or not
+                    example: false
+                  error:
+                    type: string
+                    description: a message that specifies the error that occured
+                    example: missing username
 
 components:
   securitySchemes:
