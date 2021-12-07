@@ -6,6 +6,7 @@ from app.utils import auth, COOKIE_NAME
 
 @bp.route('/<uri>', methods=['GET'])
 def getMusicByUri(uri):
+	# added to api documentation
 	playlist = Playlist.query.filter_by(uri=uri).first()
 	if playlist is None:
 		return {'success': False, 'message': 'playlist not found'}, 404
@@ -16,8 +17,9 @@ def getMusic(mood: str):
 	pass
 
 @bp.route('/add', methods=['POST'])
-def addMusic():
-	# FIXME: verify if uri is already in database or not
+def addMusic(): 
+	# FIXME: verify if uri is already in database or not (http code 409)
+	# added to api documentation
 	# authentication
 	token = request.cookies.get(COOKIE_NAME)
 	if not auth.Token.verify_blacklist(token):
@@ -52,6 +54,7 @@ def addMusic():
 @bp.route('/vote', methods=['PUT'])
 def vote():
 	# authentication
+	# added to api documentatio
 	token = request.cookies.get(COOKIE_NAME)
 	if not auth.Token.verify_blacklist(token):
 		return {'success': False, 'message': 'invalid authorization cookie'}, 403

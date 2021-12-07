@@ -56,3 +56,17 @@ print(p)
 s = Score(user=u, playlist=p, score=2, mood=m)
 print(s)
 #end
+
+additional stuff:
+	verify email: sending email with python yagmail https://github.com/kootenpv/yagmail#username-and-password
+	verify url validity: https://stackoverflow.com/questions/16778435/python-check-if-website-exists
+	verify email with regex
+	prevent multiple users from using the same email
+	✔️initialise database with default values (onCreate and onUpdate)
+	verify if uri already exists in database
+	when updating user, check if new values are valid (add validation methods to class User)
+	when deleting user, on cascade delete user's playlists
+	deleting playlist
+	modifying playlist (title, associated mood)
+
+	!! Containerize app with docker

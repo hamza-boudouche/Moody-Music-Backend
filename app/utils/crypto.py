@@ -10,3 +10,7 @@ def get_hashed_password(plain_text_password):
 def check_password(plain_text_password, hashed_password):
 	# Check hashed password. Using bcrypt, the salt is saved into the hash itself
 	return checkpw(plain_text_password, hashed_password)
+
+
+if __name__ == '__main__':
+	print(get_hashed_password("test123"))

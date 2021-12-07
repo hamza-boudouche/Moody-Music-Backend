@@ -46,7 +46,7 @@ class User(db.Model):
 
 class Playlist(db.Model):
 	id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-	uri = db.Column(db.String(64))
+	uri = db.Column(db.String(128))
 	title = db.Column(db.String(64), index=True, unique=True, nullable=False)
 	genreid = db.Column(db.Integer, db.ForeignKey("genre.id"))
 	moodid = db.Column(db.Integer, db.ForeignKey('mood.id'))
