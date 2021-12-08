@@ -2,7 +2,7 @@ from app.music import bp
 from flask import request
 from app import db
 from app.models import Genre, Mood, Playlist, User, Score
-from app.utils import auth, COOKIE_NAME
+from app.utils import auth, validate, COOKIE_NAME
 
 @bp.route('/<uri>', methods=['GET'])
 def getMusicByUri(uri):
@@ -38,7 +38,11 @@ def addMusic():
 	content = request.get_json()
 	if content.get('uri') is None or content.get('title') is None or content.get('genreid') is None or content.get('moodid') is None:
 		return {'success': False, 'message': 'missing uri, title, genreid, and/or moodid'}, 422
+	if not validate.validate_link('https://open.spotify.com/playlist/' + content.get('uri').strip()):
+		return {'success': False, 'message': 'invalid uri'}, 400
 	genre = Genre.query.filter_by(id=content.get('genreid')).first()
+	if Playlist.query.filter_by(uri=content.get('uri')).count() != 0:
+		return {'success': False, 'message': 'invalid uri (already bound to another playlist instance)'}, 422
 	if genre is None:
 		return {'success': False, 'message': 'genre not found (invalid genreid)'}, 404
 	mood = Mood.query.filter_by(id=content.get('moodid')).first()

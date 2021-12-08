@@ -59,14 +59,25 @@ print(s)
 
 additional stuff:
 	verify email: sending email with python yagmail https://github.com/kootenpv/yagmail#username-and-password
-	verify url validity: https://stackoverflow.com/questions/16778435/python-check-if-website-exists
-	verify email with regex
-	prevent multiple users from using the same email
+	✔️verify url validity: https://stackoverflow.com/questions/16778435/python-check-if-website-exists
+	✔️verify email with regex
+	✔️prevent multiple users from using the same email
 	✔️initialise database with default values (onCreate and onUpdate)
-	verify if uri already exists in database
+	✔️verify if uri already exists in database
 	when updating user, check if new values are valid (add validation methods to class User)
-	when deleting user, on cascade delete user's playlists
+	✔️when deleting user, on cascade delete user's playlists and scores
 	deleting playlist
 	modifying playlist (title, associated mood)
-
+	adding middleware https://stackoverflow.com/questions/26736419/how-to-write-flask-decorator-with-request
+		possible middlewares:
+			verify token (blacklist + decoding + username equality)
+			verify request form (contains all required fields)
+	refactoring functions to classes
+		User.vote(Playlist, score)
+		User.add(Playlist)
+		Genre.getDefaultGenre()
+		Mood.getDefaultMood()
+		User.update(dict)
 	!! Containerize app with docker
+
+

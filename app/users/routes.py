@@ -2,7 +2,7 @@ from app.users import bp
 from flask import request, jsonify, make_response
 from sqlalchemy import asc
 from app.models import User, Genre, Mood
-from app.utils import crypto, auth, DEFAULT_MOOD, DEFAULT_GENRE, COOKIE_NAME, DEFAULT_COUNT
+from app.utils import crypto, auth, validate, DEFAULT_MOOD, DEFAULT_GENRE, COOKIE_NAME, DEFAULT_COUNT
 from app import db
 
 @bp.route('/<username>', methods=['GET'])
@@ -67,6 +67,10 @@ def register():
 		return {'success': False, 'message': 'missing username, password and/or email'}, 422
 	if User.query.filter_by(username=content.get('username')).count() != 0:
 		return {'success': False, 'message': 'invalid username (already bound to another account)'}, 422
+	if not validate.validate_email_form():
+		return {'success': False, 'message': 'invalid email'}, 400
+	if User.query.filter_by(email=content.get('email')).count() != 0:
+		return {'success': False, 'message': 'invalid email (already bound to another account)'}, 422
 	# else: all imputs are present, and username is valid
 	passwordHash = crypto.hash(content.get('password'))
 	defaultGenre = Genre.query.filter_by(title=DEFAULT_GENRE).first()
@@ -97,6 +101,7 @@ def update():
 	if user is None:
 		return {'success': False, 'message': 'account not found'}, 404
 	#FIXME: add new properties to exceptions
+	#FIXME: this block needs to change, don't update values blindly, check for values valididty
 	exceptions = ['username', 'passwordHash', 'preferredGenreid', 'commonMoodid', 'genre', 'commonMood']
 	for key in content:
 		if key not in exceptions and hasattr(user, key):

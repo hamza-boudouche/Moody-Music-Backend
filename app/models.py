@@ -33,8 +33,8 @@ class User(db.Model):
 	passwordHash = db.Column(db.String(128), nullable=False)
 	preferredGenreid = db.Column(db.Integer, db.ForeignKey('genre.id'))
 	commonMoodid = db.Column(db.Integer, db.ForeignKey('mood.id'))
-	newPlaylists = db.relationship('Playlist', lazy='subquery', backref=db.backref('owner', lazy=True))
-	playlists = db.relationship('Score', lazy='subquery', backref=db.backref('user', lazy=True))
+	newPlaylists = db.relationship('Playlist', lazy='subquery', backref=db.backref('owner', lazy=True), cascade="all, delete")
+	playlists = db.relationship('Score', lazy='subquery', backref=db.backref('user', lazy=True), cascade="all, delete")
 
 	def toDict(self, include_email=False):
 		if(include_email):
