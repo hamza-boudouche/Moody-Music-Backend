@@ -5,7 +5,7 @@ from flask_migrate import Migrate
 from redis import Redis
 import os
 from dotenv import load_dotenv, find_dotenv
-import click
+import logging
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -16,6 +16,9 @@ load_dotenv(find_dotenv())
 redis_host = os.environ.get("REDIS_HOST")
 redis_port = os.environ.get("REDIS_PORT")
 cache = Redis(host=redis_host, port=redis_port, db=0)
+
+logging_level = logging.DEBUG if os.environ.get("FLASK_ENV") == "development" else logging.INFO
+logging.basicConfig(filename='moodylog.log', level=logging.DEBUG)
 
 from app.users import bp as users_bp
 app.register_blueprint(users_bp, url_prefix='/user')
@@ -30,6 +33,7 @@ from app import models
 
 @app.cli.command("initdb")
 def initDb():
+	logging.info("initializing database")
 	# clear all tables
 	models.Score.query.delete()
 	models.Playlist.query.delete()
@@ -38,6 +42,7 @@ def initDb():
 	models.Genre.query.delete()
 	db.session.commit()
 
+	logging.info("filling Mood table")
 	# initializing mood table with moods happy, sad, neutral, angry, afraid
 	mHappy = models.Mood(title='happy', description="happy description")
 	mSad = models.Mood(title='sad', description="sad description")
@@ -48,6 +53,7 @@ def initDb():
 		db.session.add(mood)
 	db.session.commit()
 	
+	logging.info("filling Genre table")
 	# initializing genre table with genres blues, jazz, rock, rock and roll, country, soul, dance, hip hop
 	gBlues = models.Genre(title='chill', description='chill description')
 	gJazz = models.Genre(title='jazz', description='jazz description')
@@ -61,18 +67,22 @@ def initDb():
 		db.session.add(genre)
 	db.session.commit()
 
+	logging.info("filling Users table")
 	# initializing user table with users
 	user1 = models.User(username='hamza', email='hamzaboudouche@student.emi.ac.ma', passwordHash='$2a$10$wY.SamFlNCZOHzTZCqTUkOAZDO013sId796jzLd4m3B8TONRVjXkG', genre=gDance, commonMood=mHappy)
 	test = models.User(username='test', email='test@test.com', passwordHash='$2a$10$UCOR2xkoMh2E.sFeo/1zw.TYYPuqlfyzEspOFQobNlquzO4obBOcG', genre=gDance, commonMood=mHappy)
 	db.session.add(user1)
 	db.session.commit()
 
+	logging.info("filling Playlists table")
 	# initializing playlist table with random playlists
 	playlist1 = models.Playlist(id=1, uri='0vvXsWCC9xrXsKd4FyS8kM?si=79e100eacf2e454f', title='lofi hip hop', genre=gHipHop, mood=mNeutral)
 	db.session.add(playlist1)
 	db.session.commit()
 
+	logging.info("filling Scores table")
 	# initializing score table with random scores
 	score1 = models.Score(user=user1, playlist=playlist1, score=1, mood=mNeutral)
 	db.session.add(score1)
 	db.session.commit()
+	logging.info("database initializing complete")

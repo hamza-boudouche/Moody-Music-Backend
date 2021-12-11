@@ -5,10 +5,9 @@ from datetime import datetime
 import json
 from app import cache
 from app.utils import BLACKLISTED
-from app.models import User
 
 class Token:
-	def __init__(self, user: User):
+	def __init__(self, user):
 		load_dotenv(find_dotenv())
 		self.tokenString = encode({'id': user.id, 'username': user.username, 'email': user.email, 'preferredGenre': user.genre, 'commonMood': user.mood, 'timestamp': datetime.now()}, os.environ.get("SECRET"), algorithm="HS256")
 

@@ -6,4 +6,3 @@ def check_auth(f):
 		# do something here
 		return f(*args, **kwargs)
 	return decorated_function
-

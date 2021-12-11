@@ -3,10 +3,13 @@ from flask import request
 from app import db
 from app.models import Genre, Mood, Playlist, User, Score
 from app.utils import auth, validate, COOKIE_NAME
+from app.utils import mail
+import logging
 
 @bp.route('/<uri>', methods=['GET'])
 def getMusicByUri(uri):
 	# added to api documentation
+	logging.info(f'request: GET /music/{uri}')
 	playlist = Playlist.query.filter_by(uri=uri).first()
 	if playlist is None:
 		return {'success': False, 'message': 'playlist not found'}, 404
@@ -14,10 +17,12 @@ def getMusicByUri(uri):
 
 @bp.route('/rec/<mood>', methods=['GET'])
 def getMusic(mood: str):
+	logging.info(f'request: GET /music/rec/{mood}')
 	pass
 
 @bp.route('/add', methods=['POST'])
 def addMusic(): 
+	logging.info(f'request: POST /music/add - {request.get_json()}')
 	# FIXME: verify if uri is already in database or not (http code 409)
 	# added to api documentation
 	# authentication
@@ -50,15 +55,13 @@ def addMusic():
 		return {'success': False, 'message': 'mood not found (invalid moodid)'}, 404
 	# TODO: verify validity of uri
 	user = User.query.filter_by(username=content.get('username'))
-	newPlaylist = Playlist(uri=content.get('uri'), title=content.get('title'), genre=genre, mood=mood, owner=user)
-	db.session.add(newPlaylist)
-	db.session.commit()
-	return {'success': True, 'message': f'playlist added successfully by user {user.username}@{user.id}'}
+	return user.add(uri=content.get('uri'), title=content.get('title'), genre=genre, mood=mood)
 
 @bp.route('/vote', methods=['PUT'])
 def vote():
+	logging.info(f'request: PUT /music/vote - {request.get_json()}')
 	# authentication
-	# added to api documentatio
+	# added to api documentation
 	token = request.cookies.get(COOKIE_NAME)
 	if not auth.Token.verify_blacklist(token):
 		return {'success': False, 'message': 'invalid authorization cookie'}, 403
@@ -69,6 +72,7 @@ def vote():
 	content = request.get_json()
 	if content.get('username') is None:
 		return {'success': False, 'message': 'missing username'}, 422
+	user = User.query.filter_by(username=user.get('username')).first()
 	if content.get('username') != user.username:
 		# unauthorized operation
 		return {'success': False, 'message': 'invalid authorization cookie'}, 403
@@ -79,21 +83,53 @@ def vote():
 		return {'success': False, 'message': 'missing uri and/or vote'}, 422
 	if content.get('vote') not in (-1, 0, 1):
 		return {'success': False, 'message': 'invalid vote, should be either -1, 0, 1'}, 422
-	playlist = Playlist.query.filter_by(uri=content.get('uri'))
+	return user.vote(uri=content.get('uri'), vote=content.get('vote'), mood=content.get('mood'))
+
+@bp.route('/update/<uri>', methods=['PUT'])
+def update(uri):
+	logging.info(f'request: PUT /music/update - {request.get_json()}')
+	tokenString = request.cookies.get(COOKIE_NAME)
+	if not auth.Token.verify_blacklist(tokenString):
+		return {'success': False, 'message': 'invalid authorization cookie'}, 403
+	user = auth.Token.verify(tokenString)
+	if user is None:
+		return {'success': False, 'message': 'invalid authorization cookie'}, 403
+	content = request.get_json()
+	if content.get('username') is None:
+		return {'success': False, 'message': 'missing username'}, 422
+	if content.get('username') != user.username:
+		# unauthorized operation
+		return {'success': False, 'message': 'invalid authorization cookie'}, 403
+	user = User.query.filter_by(username=content.get('username')).first()
+	if user is None:
+		return {'success': False, 'message': 'account not found'}, 404
+	playlist = Playlist.query.filter_by(uri=uri, owner=user).first()
 	if playlist is None:
 		return {'success': False, 'message': 'playlist not found'}, 404
-	score = Score.query.filter_by(user=user, playlist=playlist).first()
-	if score is None:
-		score = Score(user=user, playlist=playlist, score=content.get("vote"), mood=content.get('mood'))
-		db.session.add(score)
-		db.session.commit()
-	else:
-		score.score = content.get('vote')
-		db.session.commit()
-	# set string that describes the operation
-	operation = "upvoted"
-	if content.get("vote") == -1:
-		operation = "downvoted"
-	elif content.get("vote") == 0:
-		operation = "reset"
-	return {'success': True, 'score': f"{content.get('uri')} {operation} successfully"}
+	content = request.get_json()
+	success, message = playlist.update(content)
+	return {'success': success, 'message': message or f'update successful - {playlist}'}
+
+@bp.route('/delete/<uri>', methods=['DELETE'])
+def delete(uri):
+	logging.info(f'request: DELETE /music/delete/{uri}')
+	# added to api documentation
+	tokenString = request.cookies.get(COOKIE_NAME)
+	if not auth.Token.verify_blacklist(tokenString):
+		return {'success': False, 'message': 'invalid authorization cookie'}, 403
+	user = auth.Token.verify(tokenString)
+	if user is None:
+		return {'success': False, 'message': 'invalid authorization cookie'}, 403
+	content = request.get_json()
+	if content.get('username') is None:
+		return {'success': False, 'message': 'missing username'}, 422
+	if content.get('username') != user.username:
+		# unauthorized operation
+		return {'success': False, 'message': 'invalid authorization cookie'}, 403
+	user = User.query.filter_by(username=content.get('username')).first()
+	if user is None:
+		return {'success': False, 'message': 'account not found'}, 404
+	playlist = Playlist.query.filter_by(uri=uri, owner=user).first()
+	if playlist is None:
+		return {'success': False, 'message': 'playlist not found'}, 404
+	return playlist.delete(user)
