@@ -76,6 +76,7 @@ def initDb():
 
 	logging.info("filling Playlists table")
 	# initializing playlist table with random playlists
+	# FIXME: this form of uri does not work !! example of working uri: 1DFixLWuPkv3KT3TnV35m3
 	playlist1 = models.Playlist(id=1, uri='0vvXsWCC9xrXsKd4FyS8kM?si=79e100eacf2e454f', title='lofi hip hop', genre=gHipHop, mood=mNeutral)
 	db.session.add(playlist1)
 	db.session.commit()

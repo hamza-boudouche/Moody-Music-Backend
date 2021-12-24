@@ -1,5 +1,7 @@
 from app import db
 from app.utils import DEFAULT_MOOD, DEFAULT_GENRE
+import json
+from datetime import datetime
 
 class Genre(db.Model):
 	id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -37,6 +39,9 @@ class Mood(db.Model):
 	def __repr__(self):
 		return f'<Mood {self.id} - title : {self.title} - description : {self.description}>'
 
+	def toJson(self):
+		return json.dumps(self, default=lambda o: o.__dict__)
+
 	@staticmethod
 	def get_default_mood():
 		return Mood.query.filter_by(title=DEFAULT_MOOD).first()
@@ -52,8 +57,8 @@ class User(db.Model):
 
 	def toDict(self, include_email=False):
 		if(include_email):
-			return {'id': self.id, 'username': self.username, 'email': self.email, 'preferredGenre': self.genre, 'commonMood': self.commonMood}
-		return {'id': self.id, 'username': self.username, 'preferredGenre': self.genre, 'commonMood': self.commonMood}
+			return {'id': self.id, 'username': self.username, 'email': self.email, 'preferredGenre': self.genre.toDict(), 'commonMood': self.commonMood.toDict()}
+		return {'id': self.id, 'username': self.username, 'preferredGenre': self.genre.toDict(), 'commonMood': self.commonMood.toDict()}
 
 	def __repr__(self):
 		return f"<User {self.id} - username : {self.username} - email : {self.email}>"
@@ -68,12 +73,12 @@ class User(db.Model):
 		return {'success': True, 'message': f'playlist {newPlaylist.title}@{newPlaylist.id} added successfully by user {self.username}@{self.id}'}, 200
 
 	def vote(self, uri, vote, mood):
-		playlist = Playlist.query.filter_by(uri=uri)
+		playlist = Playlist.query.filter_by(uri=uri).first()
 		if playlist is None:
 			return {'success': False, 'message': 'playlist not found'}, 404
 		score = Score.query.filter_by(user=self, playlist=playlist).first()
 		if score is None:
-			score = Score(user=self, playlist=playlist, score=vote, mood=mood)
+			score = Score(user=self, playlist=playlist, score=vote, mood=mood, date=datetime.now())
 			db.session.add(score)
 			db.session.commit()
 		else:
@@ -96,26 +101,40 @@ class User(db.Model):
 			# update some attributes
 class Playlist(db.Model):
 	id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-	uri = db.Column(db.String(128))
+	uri = db.Column(db.String(128), index=True)
 	title = db.Column(db.String(64), index=True, unique=True, nullable=False)
 	genreid = db.Column(db.Integer, db.ForeignKey("genre.id"))
 	moodid = db.Column(db.Integer, db.ForeignKey('mood.id'))
 	ownerid = db.Column(db.Integer, db.ForeignKey('user.id'))
-	users = db.relationship('Score', lazy='subquery', backref=db.backref('playlist', lazy=True))
+	users = db.relationship('Score', lazy='subquery', backref=db.backref('playlist', lazy=True), cascade="all, delete")
 
 	def toDict(self):
-		return {'uri': self.uri, 'title': self.title, 'genre': self.genre, 'mood': self.mood}
+		return {'uri': self.uri, 'title': self.title, 'genre': self.genre.toDict(), 'mood': self.mood.toDict()}
 
 	def __eq__(self, other):
 		return self.id == other.id
 
 	def __repr__(self):
-		return f"<Playlist {self.uri} - title : {self.title} - genre : {self.genre} - mood : {self.mood}>"
+		return f"<Playlist {self.uri} - title : {self.title} - genre : {self.genre.toDict()} - mood : {self.mood.toDict()}>"
 
 	def delete(self, user):
 		db.session.delete(self)
 		db.session.commit()
-		return {'success': True, 'message': f'user {user.username} deleted successfully'}, 200
+		return {'success': True, 'message': f'user {user.username} deleted playlist {self.title}@{self.uri} successfully'}, 200
+
+	def update(self, dict):
+		for key in dict:
+			if key == "title":
+				if len(Playlist.query.filter_by(title=dict.get(key)).all()) != 0:
+					setattr(self, key, dict.get(key))
+					return False, "invalid title"
+			elif key == "moodid":
+				mood = Mood.query.filter_by(id=dict.get(key)).first()
+				if mood is not None:
+					self.mood = mood
+				else:
+					return False, "invalid mood"
+		return True, None
 
 # use of association table https://docs.sqlalchemy.org/en/14/orm/basic_relationships.html#association-object 
 class Score(db.Model):
@@ -123,12 +142,13 @@ class Score(db.Model):
 	playlistid = db.Column(db.Integer, db.ForeignKey('playlist.id'), primary_key=True)
 	score = db.Column(db.Integer)
 	moodid = db.Column(db.Integer, db.ForeignKey('mood.id'))
+	date = db.column(db.DateTime, index=True)
 
 	def toDict(self):
-		return {'user': self.user, 'playlist': self.playlist, 'score': self.score, 'mood': self.mood}
+		return {'user': self.user, 'playlist': self.playlist, 'score': self.score, 'mood': self.mood.toDict()}
 
 	def __repr__(self):
-		return f"<Score - user : {self.user} - playlist : {self.playlist} - score : {self.score} - mood : {self.mood}>"
+		return f"<Score - user : {self.user} - playlist : {self.playlist} - score : {self.score} - mood : {self.mood.toDict()}>"
 
 	def __eq__(self, other):
 		return self.id == other.id

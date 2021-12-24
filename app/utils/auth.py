@@ -9,7 +9,7 @@ from app.utils import BLACKLISTED
 class Token:
 	def __init__(self, user):
 		load_dotenv(find_dotenv())
-		self.tokenString = encode({'id': user.id, 'username': user.username, 'email': user.email, 'preferredGenre': user.genre, 'commonMood': user.mood, 'timestamp': datetime.now()}, os.environ.get("SECRET"), algorithm="HS256")
+		self.tokenString = encode({'id': user.id, 'username': user.username, 'email': user.email, 'preferredGenre': user.genre.toDict(), 'commonMood': user.commonMood.toDict(), 'timestamp': json.dumps(datetime.now(), indent=4, sort_keys=True, default=str)}, os.environ.get("SECRET"), algorithm="HS256")
 
 	@staticmethod
 	def verify(tokenString: str) -> dict:
@@ -23,6 +23,8 @@ class Token:
 
 	@staticmethod
 	def verify_blacklist(tokenString: str):
+		if tokenString is None:
+			return False
 		return cache.get(tokenString) != BLACKLISTED
 
 	@staticmethod
