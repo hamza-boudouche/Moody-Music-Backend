@@ -80,4 +80,7 @@ additional stuff:
 			verify token (blacklist + decoding + username equality)
 			verify request form (contains all required fields)
 	▶️logging events (received requests (date + url + request body + request params + response body + response http code))
+	classify moods into an enumeration
+	compress string on the frontend using lzstring
+	
 	!! Containerize app with docker

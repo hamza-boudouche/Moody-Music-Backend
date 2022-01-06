@@ -3,152 +3,212 @@ from app.utils import DEFAULT_MOOD, DEFAULT_GENRE
 import json
 from datetime import datetime
 
+
 class Genre(db.Model):
-	id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-	title = db.Column(db.String(64), index=True, unique=True)
-	description = db.Column(db.String(256))
-	preferredByUsers = db.relationship('User', backref=db.backref('genre', lazy=True), lazy=True)
-	playlists = db.relationship('Playlist', backref=db.backref('genre', lazy=True), lazy=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    title = db.Column(db.String(64), index=True, unique=True)
+    description = db.Column(db.String(256))
+    preferredByUsers = db.relationship(
+        "User", backref=db.backref("genre", lazy=True), lazy=True
+    )
+    playlists = db.relationship(
+        "Playlist", backref=db.backref("genre", lazy=True), lazy=True
+    )
 
-	def toDict(self):
-		return {'id': self.id, 'title': self.title, 'description': self.description}
+    def toDict(self):
+        return {"id": self.id, "title": self.title, "description": self.description}
 
-	def __repr__(self):
-		return f"<Genre {self.id} - title : {self.title} - description : {self.description}>"
+    def __repr__(self):
+        return f"<Genre {self.id} - title : {self.title} - description : {self.description}>"
 
-	def __eq__(self, other):
-		return self.id == other.id
+    def __eq__(self, other):
+        return self.id == other.id
 
-	@staticmethod
-	def get_default_genre():
-		return Genre.query.filter_by(title=DEFAULT_GENRE).first()
+    @staticmethod
+    def get_default_genre():
+        return Genre.query.filter_by(title=DEFAULT_GENRE).first()
+
+
 class Mood(db.Model):
-	id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-	title = db.Column(db.String(64), index=True, unique=True)
-	description = db.Column(db.String(256))
-	users = db.relationship('User', backref=db.backref('commonMood', lazy=True), lazy=True)
-	playlists = db.relationship('Playlist', backref=db.backref('mood', lazy=True), lazy=True)
-	scores = db.relationship('Score', backref=db.backref('mood', lazy=True), lazy=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    title = db.Column(db.String(64), index=True, unique=True)
+    description = db.Column(db.String(256))
+    users = db.relationship(
+        "User", backref=db.backref("commonMood", lazy=True), lazy=True
+    )
+    playlists = db.relationship(
+        "Playlist", backref=db.backref("mood", lazy=True), lazy=True
+    )
+    scores = db.relationship("Score", backref=db.backref("mood", lazy=True), lazy=True)
 
-	def toDict(self):
-		return {'id': self.id, 'title': self.title, 'description': self.description}
+    def toDict(self):
+        return {"id": self.id, "title": self.title, "description": self.description}
 
-	def __eq__(self, other):
-		return self.id == other.id
+    def __eq__(self, other):
+        return self.id == other.id
 
-	def __repr__(self):
-		return f'<Mood {self.id} - title : {self.title} - description : {self.description}>'
+    def __repr__(self):
+        return f"<Mood {self.id} - title : {self.title} - description : {self.description}>"
 
-	def toJson(self):
-		return json.dumps(self, default=lambda o: o.__dict__)
+    def toJson(self):
+        return json.dumps(self, default=lambda o: o.__dict__)
 
-	@staticmethod
-	def get_default_mood():
-		return Mood.query.filter_by(title=DEFAULT_MOOD).first()
+    @staticmethod
+    def get_default_mood():
+        return Mood.query.filter_by(title=DEFAULT_MOOD).first()
+
+
 class User(db.Model):
-	id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-	username = db.Column(db.String(64), index=True, unique=True, nullable=False)
-	email = db.Column(db.String(128), index=True, unique=True, nullable=False)
-	passwordHash = db.Column(db.String(128), nullable=False)
-	preferredGenreid = db.Column(db.Integer, db.ForeignKey('genre.id'))
-	commonMoodid = db.Column(db.Integer, db.ForeignKey('mood.id'))
-	newPlaylists = db.relationship('Playlist', lazy='subquery', backref=db.backref('owner', lazy=True), cascade="all, delete")
-	playlists = db.relationship('Score', lazy='subquery', backref=db.backref('user', lazy=True), cascade="all, delete")
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    username = db.Column(db.String(64), index=True, unique=True, nullable=False)
+    email = db.Column(db.String(128), index=True, unique=True, nullable=False)
+    passwordHash = db.Column(db.String(128), nullable=False)
+    preferredGenreid = db.Column(db.Integer, db.ForeignKey("genre.id"))
+    commonMoodid = db.Column(db.Integer, db.ForeignKey("mood.id"))
+    newPlaylists = db.relationship(
+        "Playlist",
+        lazy="subquery",
+        backref=db.backref("owner", lazy=True),
+        cascade="all, delete",
+    )
+    playlists = db.relationship(
+        "Score",
+        lazy="subquery",
+        backref=db.backref("user", lazy=True),
+        cascade="all, delete",
+    )
 
-	def toDict(self, include_email=False):
-		if(include_email):
-			return {'id': self.id, 'username': self.username, 'email': self.email, 'preferredGenre': self.genre.toDict(), 'commonMood': self.commonMood.toDict()}
-		return {'id': self.id, 'username': self.username, 'preferredGenre': self.genre.toDict(), 'commonMood': self.commonMood.toDict()}
+    def toDict(self, include_email=False):
+        if include_email:
+            return {
+                "id": self.id,
+                "username": self.username,
+                "email": self.email,
+                "preferredGenre": self.genre.toDict(),
+                "commonMood": self.commonMood.toDict(),
+            }
+        return {
+            "id": self.id,
+            "username": self.username,
+            "preferredGenre": self.genre.toDict(),
+            "commonMood": self.commonMood.toDict(),
+        }
 
-	def __repr__(self):
-		return f"<User {self.id} - username : {self.username} - email : {self.email}>"
+    def __repr__(self):
+        return f"<User {self.id} - username : {self.username} - email : {self.email}>"
 
-	def __eq__(self, other):
-		return self.id == other.id
+    def __eq__(self, other):
+        return self.id == other.id
 
-	def add(self, uri, title, genre, mood):
-		newPlaylist = Playlist(uri=uri, title=title, genre=genre, mood=mood, owner=self)
-		db.session.add(newPlaylist)
-		db.session.commit()
-		return {'success': True, 'message': f'playlist {newPlaylist.title}@{newPlaylist.id} added successfully by user {self.username}@{self.id}'}, 200
+    def add(self, uri, title, genre, mood):
+        newPlaylist = Playlist(uri=uri, title=title, genre=genre, mood=mood, owner=self)
+        db.session.add(newPlaylist)
+        db.session.commit()
+        return {
+            "success": True,
+            "message": f"playlist {newPlaylist.title}@{newPlaylist.id} added successfully by user {self.username}@{self.id}",
+        }, 200
 
-	def vote(self, uri, vote, mood):
-		playlist = Playlist.query.filter_by(uri=uri).first()
-		if playlist is None:
-			return {'success': False, 'message': 'playlist not found'}, 404
-		score = Score.query.filter_by(user=self, playlist=playlist).first()
-		if score is None:
-			score = Score(user=self, playlist=playlist, score=vote, mood=mood, date=datetime.now())
-			db.session.add(score)
-			db.session.commit()
-		else:
-			score.score = vote
-			db.session.commit()
-		# set string that describes the operation
-		operation = "upvoted"
-		if vote == -1:
-			operation = "downvoted"
-		elif vote == 0:
-			operation = "reset"
-		return {'success': True, 'score': f"{uri} {operation} successfully"}, 200
+    def vote(self, uri, vote, mood):
+        playlist = Playlist.query.filter_by(uri=uri).first()
+        if playlist is None:
+            return {"success": False, "message": "playlist not found"}, 404
+        score = Score.query.filter_by(user=self, playlist=playlist).first()
+        if score is None:
+            score = Score(
+                user=self, playlist=playlist, score=vote, mood=mood, date=datetime.now()
+            )
+            db.session.add(score)
+            db.session.commit()
+        else:
+            score.score = vote
+            db.session.commit()
+        # set string that describes the operation
+        operation = "upvoted"
+        if vote == -1:
+            operation = "downvoted"
+        elif vote == 0:
+            operation = "reset"
+        return {"success": True, "score": f"{uri} {operation} successfully"}, 200
 
-	def update(self, dict):
-		for key in dict:
-			# if key == 'username':
-			# 	if len(User.query.filter_by(username=dict.get(key)).all()) == 0:
-			# 		setattr(self, key, dict.get(key))
-			pass
-			# update some attributes
+    def update(self, dict):
+        for key in dict:
+            # if key == 'username':
+            # 	if len(User.query.filter_by(username=dict.get(key)).all()) == 0:
+            # 		setattr(self, key, dict.get(key))
+            pass
+            # update some attributes
+
+
 class Playlist(db.Model):
-	id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-	uri = db.Column(db.String(128), index=True)
-	title = db.Column(db.String(64), index=True, unique=True, nullable=False)
-	genreid = db.Column(db.Integer, db.ForeignKey("genre.id"))
-	moodid = db.Column(db.Integer, db.ForeignKey('mood.id'))
-	ownerid = db.Column(db.Integer, db.ForeignKey('user.id'))
-	users = db.relationship('Score', lazy='subquery', backref=db.backref('playlist', lazy=True), cascade="all, delete")
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    uri = db.Column(db.String(128), index=True)
+    title = db.Column(db.String(64), index=True, unique=True, nullable=False)
+    genreid = db.Column(db.Integer, db.ForeignKey("genre.id"))
+    moodid = db.Column(db.Integer, db.ForeignKey("mood.id"))
+    ownerid = db.Column(db.Integer, db.ForeignKey("user.id"))
+    users = db.relationship(
+        "Score",
+        lazy="subquery",
+        backref=db.backref("playlist", lazy=True),
+        cascade="all, delete",
+    )
 
-	def toDict(self):
-		return {'uri': self.uri, 'title': self.title, 'genre': self.genre.toDict(), 'mood': self.mood.toDict()}
+    def toDict(self):
+        return {
+            "uri": self.uri,
+            "title": self.title,
+            "genre": self.genre.toDict(),
+            "mood": self.mood.toDict(),
+        }
 
-	def __eq__(self, other):
-		return self.id == other.id
+    def __eq__(self, other):
+        return self.id == other.id
 
-	def __repr__(self):
-		return f"<Playlist {self.uri} - title : {self.title} - genre : {self.genre.toDict()} - mood : {self.mood.toDict()}>"
+    def __repr__(self):
+        return f"<Playlist {self.uri} - title : {self.title} - genre : {self.genre.toDict()} - mood : {self.mood.toDict()}>"
 
-	def delete(self, user):
-		db.session.delete(self)
-		db.session.commit()
-		return {'success': True, 'message': f'user {user.username} deleted playlist {self.title}@{self.uri} successfully'}, 200
+    def delete(self, user):
+        db.session.delete(self)
+        db.session.commit()
+        return {
+            "success": True,
+            "message": f"user {user.username} deleted playlist {self.title}@{self.uri} successfully",
+        }, 200
 
-	def update(self, dict):
-		for key in dict:
-			if key == "title":
-				if len(Playlist.query.filter_by(title=dict.get(key)).all()) != 0:
-					setattr(self, key, dict.get(key))
-					return False, "invalid title"
-			elif key == "moodid":
-				mood = Mood.query.filter_by(id=dict.get(key)).first()
-				if mood is not None:
-					self.mood = mood
-				else:
-					return False, "invalid mood"
-		return True, None
+    def update(self, dict):
+        for key in dict:
+            if key == "title":
+                if len(Playlist.query.filter_by(title=dict.get(key)).all()) != 0:
+                    setattr(self, key, dict.get(key))
+                    return False, "invalid title"
+            elif key == "moodid":
+                mood = Mood.query.filter_by(id=dict.get(key)).first()
+                if mood is not None:
+                    self.mood = mood
+                else:
+                    return False, "invalid mood"
+        return True, None
 
-# use of association table https://docs.sqlalchemy.org/en/14/orm/basic_relationships.html#association-object 
+
+# use of association table https://docs.sqlalchemy.org/en/14/orm/basic_relationships.html#association-object
 class Score(db.Model):
-	userid = 	db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
-	playlistid = db.Column(db.Integer, db.ForeignKey('playlist.id'), primary_key=True)
-	score = db.Column(db.Integer)
-	moodid = db.Column(db.Integer, db.ForeignKey('mood.id'))
-	date = db.column(db.DateTime, index=True)
+    userid = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
+    playlistid = db.Column(db.Integer, db.ForeignKey("playlist.id"), primary_key=True)
+    score = db.Column(db.Integer)
+    moodid = db.Column(db.Integer, db.ForeignKey("mood.id"))
+    date = db.Column(db.DateTime, index=True)
 
-	def toDict(self):
-		return {'user': self.user, 'playlist': self.playlist, 'score': self.score, 'mood': self.mood.toDict()}
+    def toDict(self):
+        return {
+            "user": self.user.toDict(),
+            "playlist": self.playlist.toDict(),
+            "score": self.score,
+            "mood": self.mood.toDict(),
+        }
 
-	def __repr__(self):
-		return f"<Score - user : {self.user} - playlist : {self.playlist} - score : {self.score} - mood : {self.mood.toDict()}>"
+    def __repr__(self):
+        return f"<Score - user : {self.user} - playlist : {self.playlist} - score : {self.score} - mood : {self.mood.toDict()}>"
 
-	def __eq__(self, other):
-		return self.id == other.id
+    def __eq__(self, other):
+        return self.id == other.id
