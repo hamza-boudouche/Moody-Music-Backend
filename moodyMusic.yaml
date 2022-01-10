@@ -135,7 +135,58 @@ paths:
                     type: string
                     description: a message that specifies the error that occured (missing username and/or password. or username already bound to another account)
                     example: missing username and/or password.
-  /user:
+  /user/register/validate:
+    get:
+      summary: Registers the new user, logs him in and returns the authentication cookie
+      requestBody:
+        required: true
+        description: A JSON object containing the login, password, and email adress.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: JohnDoe
+                password:
+                  type: string
+                  example: 1234password5678
+                email:
+                  type: string
+                  example: johndoe@example.com
+      responses:
+        "200":
+          description: Successfully added user.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag specifying if the operation succeded of not
+                    example: true
+                  message:
+                    type: string
+                    description: a message that describes the operation.
+                    example: added user johnDoe successfully
+        "422":
+          description: Invalid username (already bound to another account) or missing username and/or password.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag specifying if the operation succeded of not
+                    example: false
+                  message:
+                    type: string
+                    description: a message that specifies the error that occured (missing username and/or password. or username already bound to another account)
+                    example: missing username and/or password.
+  /user/account:
     get:
       security:
         - cookieAuth: []
@@ -457,44 +508,6 @@ paths:
                     type: string
                     description: a message that specifies the error that occured
                     example: missing username
-  /mood/rec:
-    put:
-      summary: Receives an image as a parameter and returns the mood of the person in it
-      requestBody:
-        description: Take an image using the device's camera and send it in the body of the request in a binary string format
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                image:
-                  type: string
-                  format: binary
-                  example: 01100001 01100010 01100011 01100011
-      responses:
-        "200":
-          description: an initial face detection algorithm has detected a face in the image and passed it to the mood detection algorithm which detected its corresponding mood
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  mood:
-                    type: string
-                    description: the detected mood of the person's detected face
-                    example: happy
-        "500":
-          description: no face was detected in the image.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    description: a message that specifies the error that occured (image doesn't contain any face)
-                    example: the image doesn't contain any face
   /mood/add:
     put:
       summary: Receives an image as a parameter and returns the mood of the person in it
@@ -534,7 +547,7 @@ paths:
                     description: a message that specifies the error that occured (image doesn't contain any face)
                     example: the image doesn't contain any face
   /music/vote:
-    post:
+    put:
       security:
         - cookieAuth: []
       summary: Receives a vote from the user regarding a specific playlist
@@ -752,6 +765,98 @@ paths:
                     type: string
                     description: a message that specifies the error that occured
                     example: missing username
+  /music/rec:
+    get:
+      summary: Receives an image as a parameter and returns the mood of the person in it
+      requestBody:
+        description: Take an image using the device's camera and send it in the body of the request in a binary string format
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  example: 01100001 01100010 01100011 01100011
+      responses:
+        "200":
+          description: an initial face detection algorithm has detected a face in the image and passed it to the mood detection algorithm which detected its corresponding mood
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mood:
+                    type: string
+                    description: the detected mood of the person's detected face
+                    example: happy
+        "500":
+          description: no face was detected in the image.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: a message that specifies the error that occured (image doesn't contain any face)
+                    example: the image doesn't contain any face
+  /music/genre:
+    get:
+      summary: Receives an image as a parameter and returns the mood of the person in it
+      requestBody:
+        description: Take an image using the device's camera and send it in the body of the request in a binary string format
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  example: 01100001 01100010 01100011 01100011
+      responses:
+        "200":
+          description: an initial face detection algorithm has detected a face in the image and passed it to the mood detection algorithm which detected its corresponding mood
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mood:
+                    type: string
+                    description: the detected mood of the person's detected face
+                    example: happy
+  /music/mood:
+    get:
+      summary: Receives an image as a parameter and returns the mood of the person in it
+      requestBody:
+        description: Take an image using the device's camera and send it in the body of the request in a binary string format
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  example: 01100001 01100010 01100011 01100011
+      responses:
+        "200":
+          description: an initial face detection algorithm has detected a face in the image and passed it to the mood detection algorithm which detected its corresponding mood
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mood:
+                    type: string
+                    description: the detected mood of the person's detected face
+                    example: happy
 
 components:
   securitySchemes:

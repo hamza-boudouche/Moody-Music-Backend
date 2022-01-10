@@ -6,8 +6,11 @@ from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import MaxPooling2D
 import cv2
 import numpy as np
+import logging
 
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+logging.getLogger("tensorflow").disabled = True
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 # Create the model
 model = Sequential()
@@ -49,4 +52,4 @@ def detectEmotion(np_picture):
     cropped_img = np.expand_dims(np.expand_dims(cv2.resize(roi_gray, (48, 48)), -1), 0)
     prediction = model.predict(cropped_img)
     maxindex = int(np.argmax(prediction))
-    return Mood(maxindex)
+    return maxindex

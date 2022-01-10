@@ -1,0 +1,32 @@
+version: "3.9"
+services:
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: db_pass123
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+  cache:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    stdin_open: true
+    tty: true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    depends_on:
+      - "db"
+      - "cache"
+
+volumes:
+  postgres:

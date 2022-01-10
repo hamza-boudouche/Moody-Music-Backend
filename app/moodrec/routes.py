@@ -15,5 +15,5 @@ def getMood():
     content = request.get_json()
     pic_base64 = content.get("image")
     image_np = np.array(Image.open(io.BytesIO(base64.b64decode(pic_base64))))
-    detected_mood = recognition.detectMood(image_np)
+    detected_mood = recognition.detectEmotion(image_np)
     return {"success": True, "detectedMood": detected_mood}
