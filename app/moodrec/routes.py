@@ -1,5 +1,5 @@
 from app.moodrec import bp
-from app.utils import Mood, recognition
+from app.utils import recognition, numToMood
 from flask import request
 import logging
 from PIL import Image
@@ -17,7 +17,7 @@ def getMood():
     pic_base64 = content.get("image")
     image_np = np.array(Image.open(io.BytesIO(base64.b64decode(pic_base64))))
     detected_mood = recognition.detectEmotion(image_np)
-    return {"success": True, "detectedMood": detected_mood}
+    return {"success": True, "detectedMood": numToMood(detected_mood)}
 
 
 @bp.after_request  # blueprint can also be app~~

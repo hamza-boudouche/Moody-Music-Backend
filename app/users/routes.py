@@ -27,9 +27,9 @@ def hello():
 @bp.route("/account", methods=["GET"])
 def getUser():
     # tested
+    # FIXME: add account info for others, does not require authentication, does not include email
+    # FIXME: add personnal playlists list
     logging.info(f"request: GET /user/account")
-    # FIXME: add number of upvotes, number of downvotes, number of personnal playlists (links to personnel playlists)
-    # FIXME: add history of recently upvoted playlists
     # added to api documentation
     tokenString = request.cookies.get(COOKIE_NAME)
     user = auth.Token.verify(tokenString)
@@ -47,7 +47,7 @@ def getUser():
     )
     recentlyUpvotedPlaylists = [score.playlist for score in recentlyUpvotedScores]
     return {
-        **user.toDict(),
+        **user.toDict(include_email=True),
         "number of upvotes": noUpvotes,
         "number of downvotes": noDownvotes,
         "number of playlists": noPlaylists,
@@ -203,7 +203,7 @@ def validate_registration(token):
             "message": f"added user {newUser.username} successfully",
         }
     except Exception as e:
-        return {"success": False, "message": "invalid verification token"}
+        return {"success": False, "message": "invalid verification token"}, 422
 
 
 @bp.route("/update", methods=["PUT"])

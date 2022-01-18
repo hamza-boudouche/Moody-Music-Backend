@@ -25,12 +25,29 @@ paths:
                   example: 1234password5678
       responses:
         "200":
-          description: Successfully authenticated. The session ID is returned in a cookie named `JSESSIONID`. You need to include this cookie in subsequent requests.
+          description: Successfully authenticated. The session ID is returned in a cookie named `moodymusiclogin`. You need to include this cookie in subsequent requests.
           headers:
             Set-Cookie:
               schema:
                 type: string
                 example: moodymusiclogin=abcde12345; Path=/; HttpOnly
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag specifying if the operation succeded of not
+                    example: true
+                  message:
+                    type: string
+                    description: a message that specifies the operation that was made
+                    example: authenticated successfully
+                  username:
+                    type: string
+                    description: the username of the user that was authenticated
+                    example: johndoe
         "403":
           description: wrong username and/or password.
           content:
@@ -41,7 +58,7 @@ paths:
                   success:
                     type: boolean
                     description: a boolean flag specifying if the operation succeded of not
-                    example: true
+                    example: false
                   message:
                     type: string
                     description: a message that specifies the error that occured (wrong username and/or password.)
@@ -56,7 +73,7 @@ paths:
                   success:
                     type: boolean
                     description: a boolean flag specifying if the operation succeded of not
-                    example: true
+                    example: false
                   message:
                     type: string
                     description: a message that specifies the error that occured (missing username and/or password.)
@@ -86,7 +103,7 @@ paths:
                     example: true
   /user/register:
     post:
-      summary: Registers the new user, logs him in and returns the authentication cookie
+      summary: Registers the new user, and requests email validation
       requestBody:
         required: true
         description: A JSON object containing the login, password, and email adress.
@@ -114,12 +131,16 @@ paths:
                 properties:
                   success:
                     type: boolean
-                    description: a boolean flag specifying if the operation succeded of not
+                    description: a boolean flag specifying if the operation succeded or not
                     example: true
                   message:
                     type: string
                     description: a message that describes the operation.
-                    example: added user johnDoe successfully
+                    example: waiting for email verification
+                  delay:
+                    type: integer
+                    description: the delay after which the email validation link expires
+                    example: 3600
         "422":
           description: Invalid username (already bound to another account) or missing username and/or password.
           content:
@@ -135,29 +156,35 @@ paths:
                     type: string
                     description: a message that specifies the error that occured (missing username and/or password. or username already bound to another account)
                     example: missing username and/or password.
+        "400":
+          description: Invalid email
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag specifying if the operation succeded of not
+                    example: false
+                  message:
+                    type: string
+                    description: a message that specifies the error that occured
+                    example: invalid email
   /user/register/validate:
     get:
       summary: Registers the new user, logs him in and returns the authentication cookie
-      requestBody:
-        required: true
-        description: A JSON object containing the login, password, and email adress.
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                username:
-                  type: string
-                  example: JohnDoe
-                password:
-                  type: string
-                  example: 1234password5678
-                email:
-                  type: string
-                  example: johndoe@example.com
+      parameters:
+        - in: path
+          name: token
+          required: true
+          example: edrftgyhujikol8741562gtyuh
+          schema:
+            type: string
+          description: the new user registration's validation token
       responses:
         "200":
-          description: Successfully added user.
+          description: registration validated successfully
           content:
             application/json:
               schema:
@@ -180,25 +207,17 @@ paths:
                 properties:
                   success:
                     type: boolean
-                    description: a boolean flag specifying if the operation succeded of not
+                    description: a boolean flag specifying if the operation succeded or not
                     example: false
                   message:
                     type: string
-                    description: a message that specifies the error that occured (missing username and/or password. or username already bound to another account)
-                    example: missing username and/or password.
+                    description: a message that specifies the error that occured
+                    example: invalid verification token
   /user/account:
     get:
       security:
         - cookieAuth: []
       summary: get user informations.
-      parameters:
-        - in: query
-          name: username
-          required: true
-          example: johndoe
-          schema:
-            type: string
-          description: the username of the current user
       responses:
         "200":
           description: the specified username is valid and user info is sent in the response
@@ -207,6 +226,10 @@ paths:
               schema:
                 type: object
                 properties:
+                  id:
+                    type: integer
+                    example: 1
+                    description: the id of the requested user
                   username:
                     type: string
                     example: JohnDoe
@@ -215,7 +238,15 @@ paths:
                     type: string
                     example: JohnDoe@example.com
                     description: the email of the requested user
-                  upvoteHistory:
+                  preferredGenre:
+                    type: string
+                    example: hip hop
+                    description: the preferred genre of the requested user
+                  commonMood:
+                    type: string
+                    example: happy
+                    description: the most common mood of the requested user
+                  recently upvoted playlists:
                     type: array
                     description: history of recently upvoted playlists
                     example:
@@ -225,14 +256,18 @@ paths:
                     type: string
                     example: hip hop
                     description: the preferred music genre of the current user according to upvoted playlists
-                  numberOfUpvotedPlaylists:
+                  number of upvotes:
                     type: integer
                     example: 5
                     description: the number of upvotes
-                  numberOfDownvotedPlaylists:
+                  number of downvotes:
                     type: integer
                     example: 2
                     description: the number of downvotes
+                  number of playlists:
+                    type: integer
+                    example: 2
+                    description: the number of personnal playlists
                   personnalPlaylists:
                     type: array
                     description: list of personnal playlists (added by this user)
@@ -253,21 +288,21 @@ paths:
                   message:
                     type: string
                     description: a message that specifies the error that occured (invalid username)
-                    example: missing username and/or password.
+                    example: invalid username
   /user/multiple:
     get:
       summary: get multipls users, along with their associated informations.
       parameters:
         - in: query
           name: start
-          required: true
+          required: false
           example: 5
           schema:
             type: integer
           description: the offset of users selection
         - in: query
           name: count
-          required: true
+          required: false
           example: 10
           schema:
             type: string
@@ -288,6 +323,10 @@ paths:
                     type: array
                     items:
                       properties:
+                        id:
+                          type: integer
+                          example: 1
+                          description: the id of the requested user
                         username:
                           type: string
                           example: JohnDoe
@@ -296,7 +335,15 @@ paths:
                           type: string
                           example: JohnDoe@example.com
                           description: the email of the requested user
-                        upvoteHistory:
+                        preferredGenre:
+                          type: string
+                          example: hip hop
+                          description: the preferred genre of the requested user
+                        commonMood:
+                          type: string
+                          example: happy
+                          description: the most common mood of the requested user
+                        recently upvoted playlists:
                           type: array
                           description: history of recently upvoted playlists
                           example:
@@ -306,14 +353,18 @@ paths:
                           type: string
                           example: hip hop
                           description: the preferred music genre of the current user according to upvoted playlists
-                        numberOfUpvotedPlaylists:
+                        number of upvotes:
                           type: integer
                           example: 5
                           description: the number of upvotes
-                        numberOfDownvotedPlaylists:
+                        number of downvotes:
                           type: integer
                           example: 2
                           description: the number of downvotes
+                        number of playlists:
+                          type: integer
+                          example: 2
+                          description: the number of personnal playlists
                         personnalPlaylists:
                           type: array
                           description: list of personnal playlists (added by this user)

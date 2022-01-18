@@ -26,3 +26,20 @@ class Mood(Enum):
     NEUTRAL = 4
     SAD = 5
     SURPRISED = 6
+
+
+def numToMood(n):
+    if n == 0:
+        return "angry"
+    elif n == 1:
+        return "disgusted"
+    elif n == 2:
+        return "fearful"
+    elif n == 3:
+        return "happy"
+    elif n == 4:
+        return "neutral"
+    elif n == 5:
+        return "sad"
+    elif n == 6:
+        return "surprised"
