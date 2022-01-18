@@ -220,3 +220,10 @@ def delete(uri):
     if playlist is None:
         return {"success": False, "message": "playlist not found"}, 404
     return playlist.delete(user)
+
+
+@bp.after_request  # blueprint can also be app~~
+def after_request(response):
+    header = response.headers
+    header["Access-Control-Allow-Origin"] = "*"
+    return response

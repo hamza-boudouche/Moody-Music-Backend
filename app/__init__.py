@@ -7,6 +7,7 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv, find_dotenv
 import logging
+from flask_cors import CORS
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -25,13 +26,19 @@ logging.basicConfig(filename="moodylog.log", level=logging.DEBUG)
 
 from app.users import bp as users_bp
 
+CORS(users_bp, resources=r"/*")
+
 app.register_blueprint(users_bp, url_prefix="/user")
 
 from app.music import bp as music_bp
 
+CORS(music_bp, resources=r"/*")
+
 app.register_blueprint(music_bp, url_prefix="/music")
 
 from app.moodrec import bp as moodrec_bp
+
+CORS(moodrec_bp, resources=r"/*")
 
 app.register_blueprint(moodrec_bp, url_prefix="/mood")
 

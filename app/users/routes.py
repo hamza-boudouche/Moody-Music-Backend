@@ -19,6 +19,11 @@ import json
 import os
 
 
+@bp.route("/")
+def hello():
+    return {"success": True, "message": "hello world"}
+
+
 @bp.route("/account", methods=["GET"])
 def getUser():
     # tested
@@ -275,4 +280,11 @@ def logout():
     auth.Token.blacklist(tokenString)
     response = make_response(jsonify({"success": True, "message": "token invalidated"}))
     response.set_cookie(COOKIE_NAME, "", expires=0, httponly=True)
+    return response
+
+
+@bp.after_request  # blueprint can also be app~~
+def after_request(response):
+    header = response.headers
+    header["Access-Control-Allow-Origin"] = "*"
     return response
