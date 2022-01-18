@@ -106,7 +106,7 @@ def addMusic():
             "message": "missing uri, title, genreid, and/or moodid",
         }, 422
     if not validate.validate_link(
-        "https://open.spotify.com/album/" + content.get("uri").strip()
+        "https://open.spotify.com/" + content.get("uri").strip()
     ):
         return {"success": False, "message": "invalid uri"}, 400
     genre = Genre.query.filter_by(id=content.get("genreid")).first()

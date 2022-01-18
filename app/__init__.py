@@ -56,7 +56,9 @@ def initDb():
     mNeutral = models.Mood(title="neutral", description="neutral description")
     mAngry = models.Mood(title="angry", description="angry description")
     mAfraid = models.Mood(title="afraid", description="afraid description")
-    for mood in [mHappy, mSad, mNeutral, mAfraid, mAngry]:
+    mFearful = models.Mood(title="fearful", description="fearful description")
+    mDisgusted = models.Mood(title="disgusted", description="disgusted description")
+    for mood in [mHappy, mSad, mNeutral, mAfraid, mAngry, mFearful, mDisgusted]:
         db.session.add(mood)
     db.session.commit()
 
@@ -97,16 +99,117 @@ def initDb():
     db.session.commit()
 
     logging.info("filling Playlists table")
-    # initializing playlist table with random playlists
-    # FIXME: this form of uri does not work !! example of working uri: 1DFixLWuPkv3KT3TnV35m3
+    # initializing playlist table with random playlist
     playlist1 = models.Playlist(
         id=1,
-        uri="0vvXsWCC9xrXsKd4FyS8kM?si=79e100eacf2e454f",
+        uri="album/0vvXsWCC9xrXsKd4FyS8kM",
         title="lofi hip hop",
         genre=gHipHop,
         mood=mNeutral,
     )
     db.session.add(playlist1)
+    playlists = [
+        {
+            "uri": "playlist/37i9dQZF1DX720GaRlTmKS",
+            "title": "concentration maximum",
+            "mood": mNeutral,
+        },
+        {
+            "uri": "playlist/6Fbvmc7cfthnhhPq68a09E",
+            "title": "good vibes",
+            "mood": mHappy,
+        },
+        {
+            "uri": "album/1x5rOJPgIMZhoYnkZp0htl",
+            "title": "fire and darkness",
+            "mood": mFearful,
+        },
+        {
+            "uri": "playlist/37i9dQZF1DWWEJlAGA9gs0",
+            "title": "classical essentials",
+            "mood": mNeutral,
+        },
+        {
+            "uri": "playlist/3NrIlsfVP62YZdwzNpX6gp",
+            "title": "songs that make you feel like a villain",
+            "mood": mAngry,
+        },
+        {
+            "uri": "playlist/37i9dQZF1DXa9wYJr1oMFq",
+            "title": "pop punk powerhouse",
+            "mood": mHappy,
+        },
+        {
+            "uri": "playlist/3uQaubDvQvBSYIObVHtbnN",
+            "title": "disgusted by people and by myself",
+            "mood": mDisgusted,
+        },
+        {
+            "uri": "playlist/3c0Nv5CY6TIaRszlTZbUFk",
+            "title": "sad songs 2022",
+            "mood": mSad,
+        },
+        {
+            "uri": "album/6vvN8noC5dToR8W9WZPyRO",
+            "title": "the missing man ",
+            "mood": mAngry,
+        },
+        {
+            "uri": "playlist/37i9dQZF1DXb3m918yXHxA",
+            "title": "yacht rock",
+            "mood": mHappy,
+        },
+        {
+            "uri": "playlist/1xFTW4idq3merKc6M1qjAe",
+            "title": "sad songs for crying at 3am",
+            "mood": mSad,
+        },
+        {
+            "uri": "album/1Zd0oRtoHZa6HTQ7f0diiZ",
+            "title": "sad cello and piano",
+            "mood": mSad,
+        },
+        {
+            "uri": "album/6HQ5FnWEsk4rJ2vKgHx1O6",
+            "title": "scary world",
+            "mood": mFearful,
+        },
+        {
+            "uri": "album/2NkWrhAySgDGEUOTcMV4uG",
+            "title": "die die lullaby",
+            "mood": mFearful,
+        },
+        {
+            "uri": "playlist/0l9dAmBrUJLylii66JOsHB",
+            "title": "angry mood",
+            "mood": mAngry,
+        },
+        {
+            "uri": "playlist/37i9dQZF1DWVlYsZJXqdym",
+            "title": "happy pop hits",
+            "mood": mHappy,
+        },
+        {
+            "uri": "playlist/1w5U47CbmVgcGqIHMxyIgE",
+            "title": "original windows down speakers up",
+            "mood": mHappy,
+        },
+        {
+            "uri": "playlist/37i9dQZF1DX7KNKjOK0o75",
+            "title": "have a great day",
+            "mood": mHappy,
+        },
+        {"uri": "playlist/37i9dQZF1DX7qK8ma5wgG1", "title": "sad songs", "mood": mSad},
+    ]
+    for playlist in playlists:
+        db.session.add(
+            models.Playlist(
+                uri=playlist["uri"],
+                title=playlist["title"],
+                genre=gDance,
+                mood=playlist["mood"],
+            )
+        )
     db.session.commit()
 
     logging.info("filling Scores table")
