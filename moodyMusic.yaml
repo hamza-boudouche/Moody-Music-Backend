@@ -4,7 +4,7 @@ info:
   title: "Moody Music"
   description: "API du projet integre du semestre 3"
 servers:
-  - url: "localhost:5000"
+  - url: "http://localhost:5000"
 paths:
   /user/login:
     post:
@@ -384,9 +384,13 @@ paths:
             schema:
               type: object
               properties:
+                username:
+                  type: string
+                  description: the username
+                  example: johndoe
                 email:
                   type: string
-                  description: new user email
+                  description: the new user email
                   example: newemailjohndoe@example.com
       responses:
         "200":
@@ -400,6 +404,10 @@ paths:
                     type: boolean
                     description: a boolean flag specifying if the operation succeded or not
                     example: true
+                  message:
+                    type: string
+                    description: a message describing the operation that was done
+                    example: update successful - johndoe
         "403":
           description: invalid authorization cookie
           content:
@@ -449,6 +457,18 @@ paths:
       security:
         - cookieAuth: []
       summary: delete connected user
+      requestBody:
+        description: username of user to delete
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: the username of the user to delete
+                  example: johndoe
       responses:
         "200":
           description: the user account is deleted successfully
@@ -511,7 +531,18 @@ paths:
       security:
         - cookieAuth: []
       summary: get user informations.
-
+      requestBody:
+        description: information of the user to log out
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: the username
+                  example: johndoe
       responses:
         "200":
           description: token invalidated successfully
@@ -559,8 +590,8 @@ paths:
                     type: string
                     description: a message that specifies the error that occured
                     example: missing username
-  /mood/add:
-    put:
+  /mood/rec:
+    post:
       summary: Receives an image as a parameter and returns the mood of the person in it
       requestBody:
         description: Take an image using the device's camera and send it in the body of the request in a binary string format
@@ -572,8 +603,8 @@ paths:
               properties:
                 image:
                   type: string
-                  format: binary
-                  example: 01100001 01100010 01100011 01100011
+                  format: base64
+                  example: /9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAoHCBUVFRgVFRUSGBgYGBgYFRgYGBgYGBUSGBgaGRgYGBgcIS4lHB4sIRgYJjgmKy8xNTU1GiU7QDszPy40NTEBDAwMEA8QGhISHjQhISUxNDQxNDQ0NDQ0NDQ0NDUxMTQxMTExMTQ0NDE0PzQ0MTQxNTE0NDE/MT80MTExNDExMf/AABEIAM4A9QMBIgACEQEDEQH/xAAbAAABBQEBAAAAAAAAAAAAAAACAAEDBAUGB//EAD4QAAIBAgMFBQUECQQDAAAAAAECAAMRBBIhBTFBUWEGIlJx0RMygZGSQqGxwQcUIzRigsLw8VNyc+EVsrP/xAAYAQEBAQEBAAAAAAAAAAAAAAAAAQIDBP/EACERAQEBAQEAAgICAwAAAAAAAAABAhEhAzESUUFhEyJx/9oADAMBAAIRAxEAPwC0iyQLEiydVmGwqkMCOFkthAiUSVVhKsILAELHAhAQlWAAEICHljhYAwgsNUkipAjAkqU5XxmNSkVUq7M17KoBNha51IHGcH2g23iMRXajTZqSKctg2QkWFy7A6nUiwgdjjtt4aixR3IItchcw16iOu38NlDq+ZdfdGYi2+6DvDzItPN6WzlLhCzMqg52vbLbiTrcRrJcIjuQL3Nu6w5HmIHqWz9p0K1/ZupINiG7jX6K1iRLrUZ5DiNmMLNe
       responses:
         "200":
           description: an initial face detection algorithm has detected a face in the image and passed it to the mood detection algorithm which detected its corresponding mood
@@ -582,7 +613,11 @@ paths:
               schema:
                 type: object
                 properties:
-                  mood:
+                  success:
+                    type: boolean
+                    description: a boolean flag specifying if the operation succeded or not
+                    example: true
+                  detectedMood:
                     type: string
                     description: the detected mood of the person's detected face
                     example: happy
@@ -593,9 +628,13 @@ paths:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag indicating whether or not the operation succeeded or not
+                    example: false
                   error:
                     type: string
-                    description: a message that specifies the error that occured (image doesn't contain any face)
+                    description: a message that specifies the error that occured
                     example: the image doesn't contain any face
   /music/vote:
     put:
@@ -629,21 +668,29 @@ paths:
               schema:
                 type: object
                 properties:
-                  state:
+                  sucess:
+                    type: boolean
+                    description: a boolean indicating whether or not the operation succeeded or not
+                    example: true
+                  score:
                     type: string
-                    description: optionnal succes message
+                    description: a message explaining the operation that was made
                     example: https://open.spotify.com/embed/playlist/1DFixLWuPkv3KT3TnV35m3 upvoted successfully
         "404":
-          description: specified uri not found in database
+          description: specified uri not found in database, or invalid mood id
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag indicating whether or not the operation succeeded or not
+                    example: false
                   error:
                     type: string
-                    description: a message that specifies the error that occured (invalid uri)
-                    example: invalide uri
+                    description: a message that specifies the error that occured
+                    example: invalid uri
         "403":
           description: invalid authorization cookie
           content:
@@ -651,20 +698,37 @@ paths:
               schema:
                 type: object
                 properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag indicating whether or not the operation succeeded or not
+                    example: false
                   error:
                     type: string
-                    description: a message that specifies the error that occured (invalid authorization cookie)
+                    description: a message that specifies the error that occured
                     example: invalid authorization cookie
+        "422":
+          description: missing parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag indicating whether or not the operation succeeded or not
+                    example: false
+                  message:
+                    type: string
+                    description: a message that specifies the error that occured
+                    example: missing username
   /music:
     get:
-      security:
-        - cookieAuth: []
       summary: receives a uri in the query and returns the corresponding playlist
       parameters:
-        - in: query
-          name: mood
+        - in: path
+          name: uri
           required: true
-          example: happy
+          example: playlist/drftgyuhgyhuioezre
           schema:
             type: string
           description: the uri of the playlist
@@ -728,6 +792,10 @@ paths:
             schema:
               type: object
               properties:
+                username:
+                  type: string
+                  description: username of the current user
+                  example: johndoe
                 uri:
                   type: string
                   description: uri of the playlist to add
@@ -736,14 +804,14 @@ paths:
                   type: string
                   description: title to associate with the playlist
                   example: lofi hip hop music
-                mood:
-                  type: string
-                  description: mood associated to the playlist to add
-                  example: neutral
-                genre:
-                  type: string
-                  description: genre of the playlist to add
-                  example: hip hop
+                moodid:
+                  type: integer
+                  description: id of mood associated to the playlist to add
+                  example: 3
+                genreid:
+                  type: integer
+                  description: id of genre of the playlist to add
+                  example: 1
       responses:
         "200":
           description: playlist added successfully
@@ -774,8 +842,19 @@ paths:
                   message:
                     type: string
                     description: a message that specifies the error that occured
-                    example: uri already exists in the database
+                    example: invalid uri (already bound to another playlist instance)
         "403":
+          description: invalid authorization cookie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: a message that specifies the error that occured (invalid authorization cookie)
+                    example: invalid authorization cookie
+        "400":
           description: invalid authorization cookie
           content:
             application/json:
@@ -812,106 +891,318 @@ paths:
                     type: boolean
                     description: a boolean flag indicating whether or not the operation succeeded or not
                     example: false
-                  error:
+                  message:
                     type: string
                     description: a message that specifies the error that occured
-                    example: missing username
+                    example: missing uri, title, genreid, and/or moodid
   /music/rec:
     get:
       summary: Receives an image as a parameter and returns the mood of the person in it
-      requestBody:
-        description: Take an image using the device's camera and send it in the body of the request in a binary string format
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                image:
-                  type: string
-                  format: binary
-                  example: 01100001 01100010 01100011 01100011
+      parameters:
+        - in: path
+          name: mood
+          required: true
+          example: happy
+          schema:
+            type: string
+          description: the detected mood
       responses:
         "200":
-          description: an initial face detection algorithm has detected a face in the image and passed it to the mood detection algorithm which detected its corresponding mood
+          description: the playlists relative to this mood
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  mood:
-                    type: string
-                    description: the detected mood of the person's detected face
-                    example: happy
-        "500":
-          description: no face was detected in the image.
+                  success:
+                    type: boolean
+                    description: a boolean flag specifying if the operation succeded or not
+                    example: true
+                  playlists:
+                    type: array
+                    description: array of matched playlists
+                    items:
+                      properties:
+                        uri:
+                          type: string
+                          description: uri of the playlist
+                          example: https://open.spotify.com/embed/playlist/1DFixLWuPkv3KT3TnV35m3
+                        title:
+                          type: string
+                          description: title to associate with the playlist
+                          example: lofi hip hop music
+                        moodid:
+                          type: integer
+                          description: id of mood associated to the playlist
+                          example: 3
+                        genreid:
+                          type: integer
+                          description: id of genre of the playlist
+                          example: 1
+        "404":
+          description: unknown mood
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  error:
+                  success:
+                    type: boolean
+                    description: a boolean flag specifying if the operation succeded or not
+                    example: true
+                  message:
                     type: string
-                    description: a message that specifies the error that occured (image doesn't contain any face)
-                    example: the image doesn't contain any face
+                    description: a message that specifies the error that occured
+                    example: mood not found (invalid moodid)
   /music/genre:
     get:
-      summary: Receives an image as a parameter and returns the mood of the person in it
-      requestBody:
-        description: Take an image using the device's camera and send it in the body of the request in a binary string format
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                image:
-                  type: string
-                  format: binary
-                  example: 01100001 01100010 01100011 01100011
+      summary: returns all genres with their respective info
       responses:
         "200":
-          description: an initial face detection algorithm has detected a face in the image and passed it to the mood detection algorithm which detected its corresponding mood
+          description: response contains array of genres
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  mood:
-                    type: string
-                    description: the detected mood of the person's detected face
-                    example: happy
+                  success:
+                    type: boolean
+                    description: a boolean flag specifying if the operation succeded or not
+                    example: true
+                  genres:
+                    type: array
+                    description: the actual array of genres
+                    items:
+                      type: object
+                      description: the genre object
+                      properties:
+                        id:
+                          type: integer
+                          description: the id of the genre
+                          example: 4
+                        description:
+                          type: string
+                          description: a small description of the genre
+                          example: description of the hip hop genre ...
+                        title:
+                          type: string
+                          description: the title of the genre
+                          example: hip hop
   /music/mood:
     get:
-      summary: Receives an image as a parameter and returns the mood of the person in it
+      summary: returns all moods with their respective info
+      responses:
+        "200":
+          description: response contains array of moods
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag specifying if the operation succeded or not
+                    example: true
+                  genres:
+                    type: array
+                    description: the actual array of moods
+                    items:
+                      type: object
+                      description: the mood object
+                      properties:
+                        id:
+                          type: integer
+                          description: the id of the mood
+                          example: 4
+                        description:
+                          type: string
+                          description: a small description of the mood
+                          example: description of the happy mood ...
+                        title:
+                          type: string
+                          description: the title of the happy
+                          example: happy
+  /music/update:
+    put:
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: uri
+          required: true
+          example: playlist/tyyughjoipokaae
+          schema:
+            type: string
+          description: the uri of the playlist to update
+      summary: updates the infos of the playlist associated with the specified uri
       requestBody:
-        description: Take an image using the device's camera and send it in the body of the request in a binary string format
+        description: contains the uri of the playlist to update as well as the new info to associate with it
         required: true
         content:
           application/json:
             schema:
               type: object
               properties:
-                image:
+                uri:
                   type: string
-                  format: binary
-                  example: 01100001 01100010 01100011 01100011
+                  example: https://open.spotify.com/embed/playlist/1DFixLWuPkv3KT3TnV35m3
+                moodid:
+                  description: the id of the new mood
+                  type: string
+                  example: sad
+                genreid:
+                  description: the id of the new genre
+                  type: string
+                  example: rock
       responses:
         "200":
-          description: an initial face detection algorithm has detected a face in the image and passed it to the mood detection algorithm which detected its corresponding mood
+          description: the normal response of this request; means that the operation was done succesfully
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  mood:
+                  sucess:
+                    type: boolean
+                    description: a boolean indicating whether or not the operation succeeded or not
+                    example: true
+                  score:
                     type: string
-                    description: the detected mood of the person's detected face
-                    example: happy
-
+                    description: a message explaining the operation that was made
+                    example: https://open.spotify.com/embed/playlist/1DFixLWuPkv3KT3TnV35m3 updated successfully
+        "404":
+          description: specified uri not found in database, or invalid mood id
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag indicating whether or not the operation succeeded or not
+                    example: false
+                  error:
+                    type: string
+                    description: a message that specifies the error that occured
+                    example: invalid uri
+        "403":
+          description: invalid authorization cookie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag indicating whether or not the operation succeeded or not
+                    example: false
+                  error:
+                    type: string
+                    description: a message that specifies the error that occured
+                    example: invalid authorization cookie
+        "422":
+          description: missing parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag indicating whether or not the operation succeeded or not
+                    example: false
+                  message:
+                    type: string
+                    description: a message that specifies the error that occured
+                    example: missing username
+  /music/delete:
+    delete:
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: uri
+          required: true
+          example: playlist/tyyughjoipokaae
+          schema:
+            type: string
+          description: the uri of the playlist to delete
+      summary: deletes the playlist associated with the specified uri
+      requestBody:
+        description: contains the username of the user deleting the playlist
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: the username of the user deleting the playlist
+      responses:
+        "200":
+          description: the normal response of this request; means that the operation was done succesfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sucess:
+                    type: boolean
+                    description: a boolean indicating whether or not the operation succeeded or not
+                    example: true
+                  message:
+                    type: string
+                    description: a message explaining the operation that was made
+                    example: user johndoe deleted playlist lofi@https://open.spotify.com/embed/playlist/1DFixLWuPkv3KT3TnV35m3 successfully
+        "404":
+          description: specified uri not found in database
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag indicating whether or not the operation succeeded or not
+                    example: false
+                  error:
+                    type: string
+                    description: a message that specifies the error that occured
+                    example: uri not found
+        "403":
+          description: invalid authorization cookie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag indicating whether or not the operation succeeded or not
+                    example: false
+                  message:
+                    type: string
+                    description: a message that specifies the error that occured
+                    example: invalid authorization cookie
+        "422":
+          description: missing parameters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: a boolean flag indicating whether or not the operation succeeded or not
+                    example: false
+                  message:
+                    type: string
+                    description: a message that specifies the error that occured
+                    example: missing username
 components:
   securitySchemes:
     cookieAuth:
       type: apiKey
       in: cookie
-      name: JSESSIONID
+      name: moodymusiclogin

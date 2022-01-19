@@ -131,6 +131,7 @@ def addMusic():
 @bp.route("/vote", methods=["PUT"])
 def vote():
     # tested
+    # FIXME: test if uri is valid or not
     logging.info(f"request: PUT /music/vote - {request.get_json()}")
     # authentication
     # added to api documentation

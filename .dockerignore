@@ -1,0 +1,5 @@
+*.log
+dist
+notes.txt
+*.md
+moodyMusic.yaml
