@@ -58,14 +58,15 @@ def initDb():
 
     logging.info("filling Mood table")
     # initializing mood table with moods happy, sad, neutral, angry, afraid
-    mHappy = models.Mood(title="happy", description="happy description")
-    mSad = models.Mood(title="sad", description="sad description")
-    mNeutral = models.Mood(title="neutral", description="neutral description")
-    mAngry = models.Mood(title="angry", description="angry description")
-    mAfraid = models.Mood(title="afraid", description="afraid description")
-    mFearful = models.Mood(title="fearful", description="fearful description")
-    mDisgusted = models.Mood(title="disgusted", description="disgusted description")
-    for mood in [mHappy, mSad, mNeutral, mAfraid, mAngry, mFearful, mDisgusted]:
+    mHappy = models.Mood(id=3, title="happy", description="happy description")
+    mSad = models.Mood(id=5, title="sad", description="sad description")
+    mNeutral = models.Mood(id=4, title="neutral", description="neutral description")
+    mAngry = models.Mood(id=0, title="angry", description="angry description")
+    mFearful = models.Mood(id=2, title="fearful", description="fearful description")
+    mDisgusted = models.Mood(
+        id=1, title="disgusted", description="disgusted description"
+    )
+    for mood in [mHappy, mSad, mNeutral, mAngry, mFearful, mDisgusted]:
         db.session.add(mood)
     db.session.commit()
 
@@ -107,15 +108,12 @@ def initDb():
 
     logging.info("filling Playlists table")
     # initializing playlist table with random playlist
-    playlist1 = models.Playlist(
-        id=1,
-        uri="album/0vvXsWCC9xrXsKd4FyS8kM",
-        title="lofi hip hop",
-        genre=gHipHop,
-        mood=mNeutral,
-    )
-    db.session.add(playlist1)
     playlists = [
+        {
+            "uri": "album/0vvXsWCC9xrXsKd4FyS8kM",
+            "title": "lofi hip hop",
+            "mood": mNeutral,
+        },
         {
             "uri": "playlist/37i9dQZF1DX720GaRlTmKS",
             "title": "concentration maximum",
@@ -219,11 +217,11 @@ def initDb():
         )
     db.session.commit()
 
-    logging.info("filling Scores table")
-    # initializing score table with random scores
-    score1 = models.Score(
-        user=user1, playlist=playlist1, score=1, mood=mNeutral, date=datetime.now()
-    )
-    db.session.add(score1)
-    db.session.commit()
+    # logging.info("filling Scores table")
+    # # initializing score table with random scores
+    # score1 = models.Score(
+    #     user=user1, playlist=playlist1, score=1, mood=mNeutral, date=datetime.now()
+    # )
+    # db.session.add(score1)
+    # db.session.commit()
     logging.info("database initializing complete")

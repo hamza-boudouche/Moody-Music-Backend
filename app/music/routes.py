@@ -2,7 +2,7 @@ from app.music import bp
 from flask import request
 from app import db
 from app.models import Genre, Mood, Playlist, User, Score
-from app.utils import auth, validate, COOKIE_NAME, DEFAULT_COUNT
+from app.utils import auth, validate, COOKIE_NAME, DEFAULT_COUNT, moodToNum
 from app.utils import mail
 import logging
 
@@ -20,41 +20,43 @@ def getMusicByUri(uri):
 
 @bp.route("/rec/<moodid>", methods=["GET"])
 def getMusic(moodid: str):
-    # TODO: implement this
     logging.info(f"request: GET /music/rec/{moodid}")
+    moodid = moodToNum(moodid)
+    # TODO: implement this
     mood = Mood.query.filter_by(id=moodid).first()
     if mood is None:
         return {"success": False, "message": "mood not found (invalid moodid)"}, 404
     playlists = Playlist.query.filter_by(mood=mood).limit(DEFAULT_COUNT).all()
     token = request.cookies.get(COOKIE_NAME)
-    if not auth.Token.verify_blacklist(token):
-        return {"success": True, "playlists": playlists}
     user = auth.Token.verify(token)
     if user is None:
-        return {"success": True, "playlists": playlists}
-    user = User.query.filter_by(username=user.get("username")).first()
-    num_of_owned_by = 0
-    for idx, playlist in enumerate(playlists):
-        if playlist.owner is not None and playlist.user == user:
-            num_of_owned_by += 1
-            for i in range(idx):
-                playlists[i + 1] = playlists[i]
-            playlists.insert(0, playlist)
-    for idx, playlist in enumerate(playlists):
-        score = Score.query.filter_by(
-            uri=playlist.uri, user=playlist.user
-        ).first()  # does this work ?!
-        if score is None:
-            continue
-        if score.score == 1:
-            for i in range(num_of_owned_by, idx):
-                playlists[i + 1] = playlists[i]
-            playlists.insert(num_of_owned_by, playlist)
-        if score.score == -1:
-            for i in range(idx + 1, len(playlists)):
-                playlists[i - 1] = playlists[i]
-            playlists.append(playlist)
-    return {"success": True, "playlists": playlists}
+        playlistDict = [playlist.toDict() for playlist in playlists]
+        return {"success": True, "playlists": playlistDict}
+    if not auth.Token.verify_blacklist(token):
+        user = User.query.filter_by(username=user.get("username")).first()
+        num_of_owned_by = 0
+        for idx, playlist in enumerate(playlists):
+            if playlist.owner is not None and playlist.user == user:
+                num_of_owned_by += 1
+                for i in range(idx):
+                    playlists[i + 1] = playlists[i]
+                playlists.insert(0, playlist)
+        for idx, playlist in enumerate(playlists):
+            score = Score.query.filter_by(
+                uri=playlist.uri, user=playlist.user
+            ).first()  # does this work ?!
+            if score is None:
+                continue
+            if score.score == 1:
+                for i in range(num_of_owned_by, idx):
+                    playlists[i + 1] = playlists[i]
+                playlists.insert(num_of_owned_by, playlist)
+            if score.score == -1:
+                for i in range(idx + 1, len(playlists)):
+                    playlists[i - 1] = playlists[i]
+                playlists.append(playlist)
+        playlistDict = [playlist.toDict() for playlist in playlists]
+        return {"success": True, "playlists": playlistDict}
 
 
 @bp.route("/genre", methods=["GET"])

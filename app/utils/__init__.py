@@ -43,3 +43,20 @@ def numToMood(n):
         return "sad"
     elif n == 6:
         return "surprised"
+
+
+def moodToNum(mood):
+    if mood == "angry":
+        return 0
+    elif mood == "disgusted":
+        return 1
+    elif mood == "fearful":
+        return 2
+    elif mood == "happy":
+        return 3
+    elif mood == "neutral":
+        return 4
+    elif mood == "sad":
+        return 5
+    elif mood == "surprised":
+        return 6
