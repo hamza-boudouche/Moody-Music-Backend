@@ -28,17 +28,17 @@ from app.users import bp as users_bp
 
 CORS(users_bp, resources=r"/*")
 
-app.register_blueprint(users_bp, url_prefix="/user")
+app.register_blueprint(users_bp, url_prefix="/user", allow_credentials=True)
 
 from app.music import bp as music_bp
 
 CORS(music_bp, resources=r"/*")
 
-app.register_blueprint(music_bp, url_prefix="/music")
+app.register_blueprint(music_bp, url_prefix="/music", allow_credentials=True)
 
 from app.moodrec import bp as moodrec_bp
 
-CORS(moodrec_bp, resources=r"/*")
+CORS(moodrec_bp, resources=r"/*", allow_credentials=True)
 
 app.register_blueprint(moodrec_bp, url_prefix="/mood")
 
@@ -66,7 +66,10 @@ def initDb():
     mDisgusted = models.Mood(
         id=1, title="disgusted", description="disgusted description"
     )
-    for mood in [mHappy, mSad, mNeutral, mAngry, mFearful, mDisgusted]:
+    mSuprised = models.Mood(
+        id=6, title="surprised", description="surprised description"
+    )
+    for mood in [mHappy, mSad, mNeutral, mAngry, mFearful, mDisgusted, mSuprised]:
         db.session.add(mood)
     db.session.commit()
 
@@ -110,9 +113,9 @@ def initDb():
     # initializing playlist table with random playlist
     playlists = [
         {
-            "uri": "album/0vvXsWCC9xrXsKd4FyS8kM",
-            "title": "lofi hip hop",
-            "mood": mNeutral,
+            "uri": "artist/5aG0BAVgr6Sx0sQwsjjOKQ",
+            "title": "surprise music",
+            "mood": mSuprised,
         },
         {
             "uri": "playlist/37i9dQZF1DX720GaRlTmKS",
